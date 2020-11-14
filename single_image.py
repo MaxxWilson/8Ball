@@ -5,18 +5,23 @@ import time
 # Load two images
 img1 = cv2.imread("test_images/3.png")
 img2 = cv2.imread("test_images/4.png")
-#img_edges = cv2.Canny(img, 100, 200, 9)
+
+img1 = cv2.erode(img1, np.ones((5, 5), np.uint8))
+
+img_edges = cv2.Canny(img1, 100, 200, 9)
+
+cv2.imshow("edges", img_edges)
 
 # Show both images
 
-#cv2.imshow("img1", img1)
-#cv2.imshow("img2", img2)
+cv2.imshow("img1", img1)
+cv2.imshow("img2", img2)
 
 # Calculate absolute difference and display
 diff = cv2.absdiff(img1, img2)
 
-#cv2.imshow("difference", diff)
-
+cv2.imshow("difference", diff)
+"""
 # Convert to Grayscale
 
 img_gray = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
@@ -49,6 +54,6 @@ if circles is not None:
 	# show the output image
 	cv2.imshow("output", output)
 	cv2.waitKey(0)
-
+"""
 cv2.waitKey(0)
 cv2.destroyAllWindows()
