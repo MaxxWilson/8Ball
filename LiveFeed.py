@@ -27,12 +27,17 @@ try:
         # Convert images to numpy arrays
         color_image = np.asanyarray(color_frame.get_data())
 
-        # Show images
-        cv2.namedWindow('RealSense', cv2.WINDOW_AUTOSIZE)
         # cv2.imshow('RealSense', cv2.medianBlur(color_image, 25))
 
         #bkg_removed = cv2.absdiff(color_image, bkg)
-        cv2.imshow('RealSense', cv2.Canny(color_image, 400, 550))
+        cv2.imshow('Real Sense', color_image)
+        img_gray = cv2.cvtColor(color_image, cv2.COLOR_BGR2GRAY) 
+        ret,thresh1 = cv2.threshold(img_gray, 40, 255, cv2.THRESH_BINARY)  # 16?
+        cv2.imshow("threshold", thresh1)
+        #edges = cv2.Canny(thresh1, 200,  450)
+        #cv2.imshow("edges", edges)
+
+        #cv2.imshow('RealSense', cv2.Canny(color_image, 200, 250))  # 400/550
 
         cv2.waitKey(1)
 
