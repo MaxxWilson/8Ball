@@ -3,26 +3,29 @@ import cv2
 import time
 
 # Load two images
-img = cv2.imread("test_images/1.png")
-bkg = cv2.imread("Background.png")
-
-# Show both images
+img = cv2.imread("low_light2/4.png")
+bkg = cv2.imread("Background2.png")
+dn_bkg = cv2.fastNlMeansDenoisingColored(bkg,None,10,10,7,21)
 
 cv2.imshow("img", img)
 
 # Calculate absolute difference and display
-diff = cv2.absdiff(bkg, img)
+diff = cv2.absdiff(dn_bkg, img)
 cv2.imshow("difference", diff)
 
 # Convert the img to grayscale 
-img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) 
 diff_gray = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
-ret,thresh1 = cv2.threshold(img_gray, 45,255,cv2.THRESH_BINARY)
-cv2.imshow("threshold", thresh1)
 
-thresh = 150
+#
+#blurred = cv2.medianBlur(diff_gray, 7)
 
-edges = cv2.Canny(diff_gray, thresh, thresh+50, 9)
+# Apply Binary thresholding to find balls
+blur = cv2.GaussianBlur(diff_gray,(5,5),0)
+ret,thresh1 = cv2.threshold(blur, 17,255,cv2.THRESH_BINARY)
+cv2.imshow("Threshold", thresh1)
+#cv2.medianBlur(thresh1, 5)
+
+edges = cv2.Canny(thresh1, 20, 100)
 cv2.imshow("Edges", edges)
 
 
@@ -75,11 +78,13 @@ cv2.line(img,(x1//5,y1//5), (x2//5,y2//5), (0,0,255),1)
 cv2.imshow("lines?", img)
 
 """
-"""
+
+
+
 # Ball is 48 pixels wide
 
 # detect circles in the image
-circles = cv2.HoughCircles(diff_gray, cv2.HOUGH_GRADIENT, 1, 40, param1=200, param2=15, minRadius = 20, maxRadius = 45)
+circles = cv2.HoughCircles(thresh1, cv2.HOUGH_GRADIENT, 1, 40, param1=100, param2=7, minRadius = 20, maxRadius = 25)
 
 print(circles)
 
@@ -96,15 +101,27 @@ if circles is not None:
     # show the output image
     cv2.imshow("output", diff)
     cv2.waitKey(0)
-"""
-"""
-# Set up the detector with default parameters.
-detector = cv2.SimpleBlobDetector_create()
-keypoints = detector.detect(img_gray)
-print(keypoints)
-im_with_keypoints = cv2.drawKeypoints(img_gray, keypoints, np.array([]), (0,0,255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-cv2.imshow("Keypoints", im_with_keypoints)
+
+
+
 
 """
+# Set up the detector
+params = cv2.SimpleBlobDetector_Params()
+
+# Change thresholds
+params.minThreshold = 10
+params.maxThreshold = 20
+
+params.filterByArea = True
+params.minArea = 700
+
+detector = cv2.SimpleBlobDetector_create()
+keypoints = detector.detect(thresh1)
+print(keypoints)
+im_with_keypoints = cv2.drawKeypoints(blur, keypoints, np.array([]), (0,0,255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+cv2.imshow("Keypoints", im_with_keypoints)
+"""
+
 cv2.waitKey(0)
 cv2.destroyAllWindows()
