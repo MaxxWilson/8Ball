@@ -34,12 +34,11 @@ opening = cv2.morphologyEx(thresh1, cv2.MORPH_OPEN, kernel)
 felt = cv2.imread("BinaryFeltImage.png", cv2.THRESH_BINARY)
 cv2.imshow("felt", felt)
 
-print(np.shape(felt))
-print(np.shape(opening))
-
 opening = cv2.bitwise_and(opening, felt)
 
-cv2.imshow("Open", opening)
+close = cv2.morphologyEx(opening, cv2.MORPH_CLOSE, kernel)
+
+cv2.imshow("Open", close)
 
 impause()
 

@@ -4,11 +4,17 @@ import cv2
 from datetime import datetime as dt
 import time
 import os
+import tkinter as tk
 
+# Initialize GUI Slider from 0 to 255
+gui_loop = tk.Tk()
+gui_scale = tk.Scale(gui_loop, from_=0, to=255, orient=tk.HORIZONTAL)
+gui_scale.pack()
+
+# Initialize camera pipeline
 pipeline = rs.pipeline()
 config = rs.config()
 config.enable_stream(rs.stream.color, 1920, 1080, rs.format.bgr8, 30)
-
 pipeline.start(config)
 
 # Load Background
@@ -17,12 +23,16 @@ bkg = cv2.imread("1.png")
 try:
     while(True):
 
-    # Wait for a coherent pair of frames: depth and color
+        # Wait for frames
         frames = pipeline.wait_for_frames()
         color_frame = frames.get_color_frame()
         
         if not color_frame:
             continue
+
+        gui_loop.update()
+        gui_loop.update_idletasks()
+        threshold_value = gui_scale.get()
 
         # Convert images to numpy arrays
         color_image = np.asanyarray(color_frame.get_data())
@@ -35,7 +45,7 @@ try:
         cv2.imshow('Background Difference', diff)
 
         img_gray = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY) 
-        ret,thresh1 = cv2.threshold(img_gray, 15, 255, cv2.THRESH_BINARY)  # 30?
+        ret,thresh1 = cv2.threshold(img_gray, threshold_value, 255, cv2.THRESH_BINARY)  # 30?
         cv2.imshow("threshold", thresh1)
 
         #edges = cv2.Canny(thresh1, 400,  500)
