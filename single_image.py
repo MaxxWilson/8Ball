@@ -12,18 +12,28 @@ bkg = cv2.imread("Background2.png")
 dn_bkg = cv2.fastNlMeansDenoisingColored(bkg,None,10,10,7,21)
 cv2.imshow("img", img)
 
+blueball = img[200:300, 650:750]
+cv2.imshow("blueball", blueball)
+
+
+True
+
+
+
+
 # Calculate absolute difference and display
-diff = cv2.absdiff(dn_bkg, img)
+diff = img #cv2.absdiff(dn_bkg, img)
 cv2.imshow("difference", diff)
 
 # Convert the img to grayscale 
 diff_gray = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
-
+start = time.time()
 # Apply a Gaussian filter to reduce image noise
-blur = cv2.GaussianBlur(diff_gray,(5,5),0)
+blur = cv2.GaussianBlur(diff_gray,(9,9),0)
+print(time.time()-start)
 
 # Apply Binary thresholding with low threshold to highlight balls
-ret,thresh1 = cv2.threshold(diff_gray, 15, 255,cv2.THRESH_BINARY)
+ret,thresh1 = cv2.threshold(diff_gray, 50, 255,cv2.THRESH_BINARY)
 
 cv2.imshow("Threshold", thresh1)
 
