@@ -9,6 +9,7 @@ import tkinter as tk
 # Initialize GUI Slider from 0 to 255
 gui_loop = tk.Tk()
 gui_scale = tk.Scale(gui_loop, from_=0, to=255, orient=tk.HORIZONTAL)
+gui_scale.set(20)
 gui_scale.pack()
 
 # Initialize camera pipeline
@@ -18,7 +19,7 @@ config.enable_stream(rs.stream.color, 1920, 1080, rs.format.bgr8, 30)
 pipeline.start(config)
 
 # Load Background
-bkg = cv2.imread("1.png")
+bkg = cv2.imread("Background2.png")
 
 try:
     while(True):
@@ -38,14 +39,18 @@ try:
         color_image = np.asanyarray(color_frame.get_data())
 
         #bkg_removed = cv2.absdiff(color_image, bkg)
-        cv2.imshow('Real Sense', color_image)
-
+        #cv2.imshow('Real Sense', color_image)
         diff = cv2.absdiff(color_image, bkg)
         #diff = cv2.blur(diff, (9, 9))
         cv2.imshow('Background Difference', diff)
 
-        img_gray = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY) 
-        ret,thresh1 = cv2.threshold(img_gray, threshold_value, 255, cv2.THRESH_BINARY)  # 30?
+        diff_gray = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
+        
+        # Apply a Gaussian filter to reduce image noise
+        blur = cv2.GaussianBlur(diff_gray,(9,9),0)
+
+        ret,thresh1 = cv2.threshold(blur, threshold_value, 255, cv2.THRESH_BINARY)  # 30?
+        
         cv2.imshow("threshold", thresh1)
 
         #edges = cv2.Canny(thresh1, 400,  500)
