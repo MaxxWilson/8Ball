@@ -16,7 +16,7 @@ blueball = img[200:300, 650:750]
 cv2.imshow("blueball", blueball)
 
 
-True
+
 
 
 
