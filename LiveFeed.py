@@ -28,6 +28,7 @@ try:
         frames = pipeline.wait_for_frames()
         color_frame = frames.get_color_frame()
         
+        # Skip Loop iteration if we don't have a frame
         if not color_frame:
             continue
 
@@ -47,7 +48,7 @@ try:
         diff_gray = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
         
         # Apply a Gaussian filter to reduce image noise
-        blur = cv2.GaussianBlur(diff_gray,(9,9),0)
+        blur = cv2.GaussianBlur(diff_gray,(5,5),0)
 
         ret,thresh1 = cv2.threshold(blur, threshold_value, 255, cv2.THRESH_BINARY)  # 30?
         
