@@ -22,33 +22,40 @@ cv2.imshow("blueball", blueball)
 
 
 # Calculate absolute difference and display
-diff = img #cv2.absdiff(dn_bkg, img)
+diff = cv2.absdiff(dn_bkg, img)
 cv2.imshow("difference", diff)
 
 # Convert the img to grayscale 
 diff_gray = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
-start = time.time()
+
 # Apply a Gaussian filter to reduce image noise
 blur = cv2.GaussianBlur(diff_gray,(9,9),0)
-print(time.time()-start)
 
 # Apply Binary thresholding with low threshold to highlight balls
-ret,thresh1 = cv2.threshold(diff_gray, 50, 255,cv2.THRESH_BINARY)
+ret,thresh1 = cv2.threshold(diff_gray, 15, 255,cv2.THRESH_BINARY)
 
 cv2.imshow("Threshold", thresh1)
-
-# Apply an 8x8 morphological Opening operation to remove noise from binary image
-kernel = np.ones((8,8),np.uint8)
-opening = cv2.morphologyEx(thresh1, cv2.MORPH_OPEN, kernel)
 
 felt = cv2.imread("BinaryFeltImage.png", cv2.THRESH_BINARY)
 cv2.imshow("felt", felt)
 
-opening = cv2.bitwise_and(opening, felt)
+ball_region = cv2.bitwise_and(thresh1, felt)
 
+cv2.imshow("Ball Region", ball_region)
+
+# Apply an 8x8 morphological Opening operation to remove noise from binary image
+kernel = np.ones((10,10),np.uint8)
+opening = cv2.morphologyEx(ball_region, cv2.MORPH_OPEN, kernel)
 close = cv2.morphologyEx(opening, cv2.MORPH_CLOSE, kernel)
 
-cv2.imshow("Open", close)
+cv2.imshow("Close", close)
+
+contours, hierarchy = cv2.findContours(close, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+print(contours)
+
+cv2.drawContours(img, contours, -1, (0,255,0), 3)
+
+cv2.imshow("Contours", img)
 
 impause()
 
