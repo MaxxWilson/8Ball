@@ -39,6 +39,8 @@ try:
 
         #cv2.imshow('RealSense', cv2.Canny(color_image, 200, 250))  # 400/550
 
+        #hello world
+
         cv2.waitKey(1)
 
 finally:
