@@ -33,6 +33,10 @@ try:
         cv2.imshow('Real Sense', color_image)
         img_gray = cv2.cvtColor(color_image, cv2.COLOR_BGR2GRAY) 
         ret,thresh1 = cv2.threshold(img_gray, 40, 255, cv2.THRESH_BINARY)  # 16?
+        #blur = cv.GaussianBlur(img_gray,(5,5),0)  #Create a gaussian blur to remove noise and pass through Otsu thresholding
+        #ret,thresh1 = cv.threshold(blur,0,255,cv.THRESH_BINARY+cv.THRESH_OTSU)
+        #thresh1 = cv.adaptiveThreshold(img,255,cv.ADAPTIVE_THRESH_GAUSSIAN_C,cv.THRESH_BINARY,11,2) #alternatively use an adaptive threshold with gaussian noise reduction
+
         cv2.imshow("threshold", thresh1)
         #edges = cv2.Canny(thresh1, 200,  450)
         #cv2.imshow("edges", edges)
