@@ -1,85 +1,72 @@
 import numpy as np
-import cv2
 import time
+import matplotlib.pyplot as plt
+
+from ShorthandFunctions import *
 
 # Load two images
-img = cv2.imread("test_images/1.png")
-bkg = cv2.imread("Background.png")
+img = cv2.imread("low_light2/4.png")
+bkg = cv2.imread("Background2.png")
 
-# Show both images
-
+# Desnoise the background image to remove noise in our final difference
+dn_bkg = cv2.fastNlMeansDenoisingColored(bkg,None,10,10,7,21)
 cv2.imshow("img", img)
 
+blueball = img[200:300, 650:750]
+cv2.imshow("blueball", blueball)
+
+
+
+
+
+
+
 # Calculate absolute difference and display
-diff = cv2.absdiff(bkg, img)
+diff = cv2.absdiff(dn_bkg, img)
 cv2.imshow("difference", diff)
 
 # Convert the img to grayscale 
-img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) 
 diff_gray = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
-ret,thresh1 = cv2.threshold(img_gray, 45,255,cv2.THRESH_BINARY)
-cv2.imshow("threshold", thresh1)
 
-thresh = 150
+# Apply a Gaussian filter to reduce image noise
+blur = cv2.GaussianBlur(diff_gray,(9,9),0)
 
-edges = cv2.Canny(diff_gray, thresh, thresh+50, 9)
+# Apply Binary thresholding with low threshold to highlight balls
+ret,thresh1 = cv2.threshold(diff_gray, 15, 255,cv2.THRESH_BINARY)
+
+cv2.imshow("Threshold", thresh1)
+
+felt = cv2.imread("BinaryFeltImage.png", cv2.THRESH_BINARY)
+cv2.imshow("felt", felt)
+
+ball_region = cv2.bitwise_and(thresh1, felt)
+
+cv2.imshow("Ball Region", ball_region)
+
+# Apply an 8x8 morphological Opening operation to remove noise from binary image
+kernel = np.ones((10,10),np.uint8)
+opening = cv2.morphologyEx(ball_region, cv2.MORPH_OPEN, kernel)
+close = cv2.morphologyEx(opening, cv2.MORPH_CLOSE, kernel)
+
+cv2.imshow("Close", close)
+
+contours, hierarchy = cv2.findContours(close, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+print(contours)
+
+cv2.drawContours(img, contours, -1, (0,255,0), 3)
+
+cv2.imshow("Contours", img)
+
+impause()
+
+edges = cv2.Canny(opening, 20, 100)
 cv2.imshow("Edges", edges)
 
 
-"""
-# This returns an array of r and theta values 
-lines = cv2.HoughLines(edges,1,np.pi/180, 50, 100)
-
-print(lines)
-
-x1 = 0
-x2 = 0
-y1 = 0
-y2 = 0
-
-# The below for loop runs till r and theta values  
-# are in the range of the 2d array
-for i in range(len(lines)):
-    for r,theta in lines[i]: 
-        
-        # Stores the value of cos(theta) in a 
-        a = np.cos(theta) 
-    
-        # Stores the value of sin(theta) in b 
-        b = np.sin(theta) 
-        
-        # x0 stores the value rcos(theta) 
-        x0 = a*r 
-        
-        # y0 stores the value rsin(theta) 
-        y0 = b*r 
-        
-        # x1 stores the rounded off value of (rcos(theta)-1000sin(theta)) 
-        x1 += int(x0 + 1000*(-b)) 
-        
-        # y1 stores the rounded off value of (rsin(theta)+1000cos(theta)) 
-        y1 += int(y0 + 1000*(a)) 
-    
-        # x2 stores the rounded off value of (rcos(theta)+1000sin(theta)) 
-        x2 += int(x0 - 1000*(-b)) 
-        
-        # y2 stores the rounded off value of (rsin(theta)-1000cos(theta)) 
-        y2 += int(y0 - 1000*(a)) 
-        
-        # cv2.line draws a line in img from the point(x1,y1) to (x2,y2). 
-        # (0,0,255) denotes the colour of the line to be  
-        #drawn. In this case, it is red.  
-        
-cv2.line(img,(x1//5,y1//5), (x2//5,y2//5), (0,0,255),1) 
-
-cv2.imshow("lines?", img)
-
-"""
-"""
 # Ball is 48 pixels wide
 
 # detect circles in the image
-circles = cv2.HoughCircles(diff_gray, cv2.HOUGH_GRADIENT, 1, 40, param1=200, param2=15, minRadius = 20, maxRadius = 45)
+circles = cv2.HoughCircles(opening, cv2.HOUGH_GRADIENT, 1, 40, param1=100, param2=7, minRadius = 20, maxRadius = 25)
 
 print(circles)
 
@@ -96,15 +83,6 @@ if circles is not None:
     # show the output image
     cv2.imshow("output", diff)
     cv2.waitKey(0)
-"""
-"""
-# Set up the detector with default parameters.
-detector = cv2.SimpleBlobDetector_create()
-keypoints = detector.detect(img_gray)
-print(keypoints)
-im_with_keypoints = cv2.drawKeypoints(img_gray, keypoints, np.array([]), (0,0,255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-cv2.imshow("Keypoints", im_with_keypoints)
 
-"""
 cv2.waitKey(0)
 cv2.destroyAllWindows()

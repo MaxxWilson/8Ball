@@ -12,7 +12,7 @@ config.enable_stream(rs.stream.color, 1920, 1080, rs.format.bgr8, 30)
 pipeline.start(config)
 
 # Define parameters to collect data
-image_directory = "low_light/" # Local path to image folder
+image_directory = "low_light2/" # Local path to image folder
 save_path = os.getcwd() + "/" + image_directory # Absolute path to image folder
 
 # Look at existing test images for naming scheme
