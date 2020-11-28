@@ -1,6 +1,7 @@
 import numpy as np
 import time
 import matplotlib.pyplot as plt
+from skimage.metrics import structural_similarity
 
 from ShorthandFunctions import *
 
@@ -12,17 +13,8 @@ bkg = cv2.imread("Background2.png")
 dn_bkg = cv2.fastNlMeansDenoisingColored(bkg,None,10,10,7,21)
 cv2.imshow("img", img)
 
-blueball = img[200:300, 650:750]
-cv2.imshow("blueball", blueball)
-
-
-
-
-
-
-
 # Calculate absolute difference and display
-diff = img #cv2.absdiff(dn_bkg, img)
+diff = cv2.absdiff(dn_bkg, img)
 cv2.imshow("difference", diff)
 
 # Convert the img to grayscale 
