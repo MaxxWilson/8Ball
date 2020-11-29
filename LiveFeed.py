@@ -20,12 +20,19 @@ gui_scale = tk.Scale(main_window, from_=0, to=255, orient=tk.HORIZONTAL, length=
 gui_scale.set(20)
 gui_scale.pack(side=tk.BOTTOM)
 
+table_threshold_scale = tk.Scale(main_window, from_=0, to=255, orient=tk.HORIZONTAL, length=150, label="Table Threshold")
+table_threshold_scale.set(10)
+table_threshold_scale.pack(side=tk.BOTTOM)
+
 def capture_background():
     BkgHandler.reset_bkg(30, 0.01)
     return
 
 bkg_btn = tk.Button(main_window, text="Capture Background", command=capture_background, width=150)
 bkg_btn.pack()
+
+bkg_debug_toggle_btn = tk.Button(main_window, text="Background Debug Toggle", command=BkgHandler.toggle_table_debug, width=150)
+bkg_debug_toggle_btn.pack()
 
 exit_btn = tk.Button(main_window, text="Exit", command=main_window.destroy, width=150)
 exit_btn.pack()
@@ -36,16 +43,8 @@ config = rs.config()
 config.enable_stream(rs.stream.color, 1920, 1080, rs.format.bgr8, 30)
 pipeline.start(config)
 
-while(True):
-
-    #### Update GUI ####
-    main_window.update()
-    main_window.update_idletasks()
-    threshold_value = gui_scale.get()
-    time.sleep(0.001)
-
 try:
-    while(False):
+    while(True):
         print("Active")
         # Wait for frames
         frames = pipeline.wait_for_frames()
@@ -65,12 +64,17 @@ try:
 
         #### Capture Static Background ####
         if BkgHandler.get_bkg_state() == False:
-            print("Takin' Pics!")
             BkgHandler.img_accumulator(color_image)
             continue
 
+        if BkgHandler.debug_toggle:
+            table_bounds = BkgHandler.calculate_table_border(table_threshold_scale.get())
+            cv2.imshow("Table Border Threshold", self._bkg_img_thresh)
+            rect = cv2.rectangle(BkgHandler.get_bkg_img().copy(),(x,y),(x+w,y+h),(0,255,0),2)
+            cv2.imshow("Table Bounds", rect)
 
         cv2.imshow("Background", BkgHandler.get_bkg_img())
+        
         """
         diff = cv2.absdiff(color_image, )
         cv2.imshow('Background Difference', diff)

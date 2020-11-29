@@ -3,20 +3,33 @@ import cv2
 import time
 from ShorthandFunctions import *
 
-img = cv2.imread("low_light2/4.png")
-bkg = cv2.imread("Background2.png")
-dn_bkg = cv2.fastNlMeansDenoisingColored(bkg,None,10,10,7,21)
+img = cv2.imread("BackgroundAvg.png")
 
 cv2.imshow("dn_bkg", FSCS(img))
 
-""" Color Masking """
-hsv = cv2.cvtColor(dn_bkg, cv2.COLOR_BGR2HSV)
+img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+_, thresh = cv2.threshold(img_gray, 10, 255, cv2.THRESH_BINARY_INV)
 
-lower_blue = cv2.cvtColor(np.uint8([[dn_bkg[540, 960]]]), cv2.COLOR_BGR2HSV)
-upper_blue = cv2.cvtColor(np.uint8([[dn_bkg[175, 225]]]), cv2.COLOR_BGR2HSV)
+cv2.imshow("Threshold", thresh)
 
-lo_sq = np.full((1000, 1000, 3), dn_bkg[540, 960], dtype=np.uint8) / 255.0
-hi_sq = np.full((1000, 1000, 3), dn_bkg[175, 225], dtype=np.uint8) / 255.0
+x,y,w,h = cv2.boundingRect(thresh)
+rect = cv2.rectangle(img,(x,y),(x+w,y+h),(0,255,0),2)
+
+cv2.imshow("rectangle?", rect)
+
+
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+
+"""
+"""" Color Masking """"
+hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
+lower_blue = cv2.cvtColor(np.uint8([[img[540, 960]]]), cv2.COLOR_BGR2HSV)
+upper_blue = cv2.cvtColor(np.uint8([[img[175, 225]]]), cv2.COLOR_BGR2HSV)
+
+lo_sq = np.full((1000, 1000, 3), img[540, 960], dtype=np.uint8) / 255.0
+hi_sq = np.full((1000, 1000, 3), img[175, 225], dtype=np.uint8) / 255.0
 
 cv2.imshow('lo_sq', lo_sq)
 cv2.imshow('hi_sq', hi_sq)
@@ -46,3 +59,4 @@ cv2.imshow('close',close)
 #cv2.imshow('res',res)
 
 impause()
+"""
