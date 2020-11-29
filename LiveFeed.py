@@ -6,10 +6,14 @@ import time
 import sys
 import tkinter as tk
 from DrawCircles import DrawCircles
-from BackgroundImageHandler import BackgroundImageHandler
 
-#### Initialize Background Image Handler ####
+from BackgroundImageHandler import BackgroundImageHandler
+from ObjectClassifier import ObjectClassifier
+
+
+#### Initialize Custom Classes ####
 BkgHandler = BackgroundImageHandler(30, 0.1)
+ObjClassifier = ObjectClassifier()
 
 #### Initialize GUI ####
 main_window = tk.Tk()
@@ -45,7 +49,6 @@ pipeline.start(config)
 
 try:
     while(True):
-        print("Active")
         # Wait for frames
         frames = pipeline.wait_for_frames()
         color_frame = frames.get_color_frame()
@@ -67,15 +70,18 @@ try:
             BkgHandler.img_accumulator(color_image)
             continue
 
+        #### TEST PLEASE ####
         if BkgHandler.debug_toggle:
-            table_bounds = BkgHandler.calculate_table_border(table_threshold_scale.get())
-            cv2.imshow("Table Border Threshold", self._bkg_img_thresh)
-            rect = cv2.rectangle(BkgHandler.get_bkg_img().copy(),(x,y),(x+w,y+h),(0,255,0),2)
-            cv2.imshow("Table Bounds", rect)
+            rect = BkgHandler.calculate_table_border(table_threshold_scale.get())
+            table_bounds_img = cv2.rectangle(BkgHandler.get_bkg_img().copy(),(rect[0],rect[1]),(rect[0]+rect[2],rect[1]+rect[3]),(0,255,0),2)
+            cv2.imshow("Table Border", table_bounds_img)
+            cv2.imshow("Table Border Threshold Image", BkgHandler._bkg_img_thresh)
 
         cv2.imshow("Background", BkgHandler.get_bkg_img())
+
+        # At this point, we have a background image and a border, yea?
+        # Next step is to subtract background image and restrict search area, then look for balls and cues
         
-        """
         diff = cv2.absdiff(color_image, )
         cv2.imshow('Background Difference', diff)
 
@@ -90,7 +96,7 @@ try:
 
         # detect circles in the image
         DrawCircles(thresh, diff)
-        """
+        
 
         cv2.waitKey(1)
 

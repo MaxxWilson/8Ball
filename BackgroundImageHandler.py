@@ -16,7 +16,7 @@ class BackgroundImageHandler():
 
         self.bounding_rect = []
 
-        self.debug_toggle
+        self.debug_toggle = False
 
     def img_accumulator(self, img):
         
@@ -65,14 +65,15 @@ class BackgroundImageHandler():
 
 
 # Test for calculate_table_border()
-"""
+
 BkgHandler = BackgroundImageHandler()
 BkgHandler.load_background("BackgroundAvg.png")
 cv2.imshow("Background", BkgHandler.get_bkg_img())
 cv2.waitKey(0)
 cv2.destroyAllWindows()
 
-print(BkgHandler.calculate_table_border(10))
+x, y, w, h = BkgHandler.calculate_table_border(10)
+print(x, y, w, h)
 
 cv2.imshow("Thresholded Image", BkgHandler._bkg_img_thresh)
 
@@ -81,4 +82,3 @@ cv2.imshow("Bounds", rect)
 
 cv2.waitKey(0)
 cv2.destroyAllWindows()
-"""
