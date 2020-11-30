@@ -1,25 +1,19 @@
 import numpy as np
 import time
 import matplotlib.pyplot as plt
+from skimage.metrics import structural_similarity
+import cv2
+
 
 from ShorthandFunctions import *
 
 # Load two images
-img = cv2.imread("low_light2/4.png")
+img = cv2.imread("low_light2/10.png")
 bkg = cv2.imread("Background2.png")
 
 # Desnoise the background image to remove noise in our final difference
 dn_bkg = cv2.fastNlMeansDenoisingColored(bkg,None,10,10,7,21)
 cv2.imshow("img", img)
-
-blueball = img[200:300, 650:750]
-cv2.imshow("blueball", blueball)
-
-
-
-
-
-
 
 # Calculate absolute difference and display
 diff = cv2.absdiff(dn_bkg, img)
@@ -51,16 +45,25 @@ close = cv2.morphologyEx(opening, cv2.MORPH_CLOSE, kernel)
 cv2.imshow("Close", close)
 
 contours, hierarchy = cv2.findContours(close, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-print(contours)
+#print(np.shape(contours[0]))
 
-cv2.drawContours(img, contours, -1, (0,255,0), 3)
+contour_img = cv2.drawContours(img.copy(), contours, -1, (0,255,0), 3)
 
-cv2.imshow("Contours", img)
+for c in contours:
+    M = cv2.moments(c)
+    # calculate x,y coordinate of center
+    cX = int(M["m10"] / M["m00"])
+    cY = int(M["m01"] / M["m00"])
+    cv2.circle(img, (cX, cY), 5, (255, 255, 255), -1)
+    cv2.putText(img, "centroid", (cX - 25, cY - 25),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+
+cv2.imshow("Contours", contour_img)
+cv2.imshow("Centroids", img)
 
 impause()
 
-edges = cv2.Canny(opening, 20, 100)
-cv2.imshow("Edges", edges)
+#edges = cv2.Canny(opening, 20, 100)
+#cv2.imshow("Edges", edges)
 
 
 # Ball is 48 pixels wide
@@ -81,8 +84,8 @@ if circles is not None:
         cv2.circle(diff, (x, y), r, (0, 0, 255), 4)
         cv2.rectangle(diff, (x - 5, y - 5), (x + 5, y + 5), (0, 0, 255), -1)
     # show the output image
-    cv2.imshow("output", diff)
-    cv2.waitKey(0)
+    #cv2.imshow("output", diff)
+    #cv2.waitKey(0)
 
-cv2.waitKey(0)
-cv2.destroyAllWindows()
+#cv2.waitKey(0)
+#cv2.destroyAllWindows()
