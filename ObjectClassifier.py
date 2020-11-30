@@ -10,3 +10,6 @@ class ObjectClassifier():
 
     def scan_image(self, img):
         pass
+
+    def classify_striped_solid(self):
+        pass

@@ -70,22 +70,52 @@ try:
             BkgHandler.img_accumulator(color_image)
             continue
 
+        rect = BkgHandler.calculate_table_border(table_threshold_scale.get())
+
         #### TEST PLEASE ####
         if BkgHandler.debug_toggle:
-            rect = BkgHandler.calculate_table_border(table_threshold_scale.get())
-            table_bounds_img = cv2.rectangle(BkgHandler.get_bkg_img().copy(),(rect[0],rect[1]),(rect[0]+rect[2],rect[1]+rect[3]),(0,255,0),2)
+            table_bounds_img = cv2.rectangle(BkgHandler.get_bkg_img().copy(),(rect[0][0],rect[0][1]),(rect[1][0],rect[1][1]),(0,255,0),2)
             cv2.imshow("Table Border", table_bounds_img)
             cv2.imshow("Table Border Threshold Image", BkgHandler._bkg_img_thresh)
 
         cv2.imshow("Background", BkgHandler.get_bkg_img())
 
+        
+        
+        
         # At this point, we have a background image and a border, yea?
         # Next step is to subtract background image and restrict search area, then look for balls and cues
         
-        diff = cv2.absdiff(color_image, )
-        cv2.imshow('Background Difference', diff)
+        difference_image = cv2.absdiff(color_image, BkgHandler.get_bkg_img())
+        cv2.imshow('Background Difference', difference_image)
+        
+        ObjClassifier.mro
 
-        diff_gray = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
+        """
+        Convert to Grayscale
+        Look at difference feed
+        (Optional) Apply Gaussian
+        Threshold to highlight balls and cue (split)
+        
+        #### Balls ####
+        Open-Close
+        (Optional) Contours and Edge Detection?
+        (IDK) Partition into segments
+        Apply Min Enclosing Circle / Hough Circles with new thresholding
+
+        #### Cue ####
+        """
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         
         # Apply a Gaussian filter to reduce image noise
         blur = cv2.GaussianBlur(diff_gray,(5,5),0)

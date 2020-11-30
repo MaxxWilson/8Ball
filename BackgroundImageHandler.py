@@ -37,8 +37,8 @@ class BackgroundImageHandler():
         
         self._bkg_img_gray = cv2.cvtColor(self._bkg_img, cv2.COLOR_BGR2GRAY)
         _, self._bkg_img_thresh = cv2.threshold(self._bkg_img_gray, threshold, 255, cv2.THRESH_BINARY_INV)
-        self.bounding_rect = cv2.boundingRect(self._bkg_img_thresh)
-        
+        x, y, w, h = cv2.boundingRect(self._bkg_img_thresh)
+        self.bounding_rect = [[x, y], [x+w, y+h]]
         return self.bounding_rect
 
     def reset_bkg(self, img_count, timer):
@@ -72,12 +72,11 @@ cv2.imshow("Background", BkgHandler.get_bkg_img())
 cv2.waitKey(0)
 cv2.destroyAllWindows()
 
-x, y, w, h = BkgHandler.calculate_table_border(10)
-print(x, y, w, h)
+rect = BkgHandler.calculate_table_border(10)
 
 cv2.imshow("Thresholded Image", BkgHandler._bkg_img_thresh)
 
-rect = cv2.rectangle(BkgHandler.get_bkg_img().copy(),(x,y),(x+w,y+h),(0,255,0),2)
+rect = cv2.rectangle(BkgHandler.get_bkg_img().copy(),(rect[0][0],rect[0][1]),(rect[1][0],rect[1][1]),(0,255,0),2)
 cv2.imshow("Bounds", rect)
 
 cv2.waitKey(0)
