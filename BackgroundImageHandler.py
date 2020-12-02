@@ -15,11 +15,11 @@ class BackgroundImageHandler():
         self._bkg_img_thresh = None
 
         self.bounding_rect = []
+        self.table_thickness = 100
 
         self.debug_toggle = False
 
     def img_accumulator(self, img):
-        
         if self._avg_counter == self._img_count:
             self._bkg_img = img.astype(np.float32, copy=False)
             self._avg_counter -= 1
@@ -32,14 +32,14 @@ class BackgroundImageHandler():
         elif self._avg_counter == 0:
             self._bkg_img = (self._bkg_img / self._img_count).astype("uint8", copy=False)
             self._bkg_state = True
+            self._calculate_table_border(10)
 
-    def calculate_table_border(self, threshold):
+    def _calculate_table_border(self, threshold):
         
         self._bkg_img_gray = cv2.cvtColor(self._bkg_img, cv2.COLOR_BGR2GRAY)
         _, self._bkg_img_thresh = cv2.threshold(self._bkg_img_gray, threshold, 255, cv2.THRESH_BINARY_INV)
         x, y, w, h = cv2.boundingRect(self._bkg_img_thresh)
-        self.bounding_rect = [[x, y], [x+w, y+h]]
-        return self.bounding_rect
+        self.bounding_rect = [[x+self.table_thickness, y+self.table_thickness], [x+w-self.table_thickness, y+h-self.table_thickness]]
 
     def reset_bkg(self, img_count, timer):
         self._bkg_state = False
@@ -54,7 +54,11 @@ class BackgroundImageHandler():
     def toggle_table_debug(self):
         self.debug_toggle = not self.debug_toggle
 
-    def load_background(self, file):
+    def save_background(self, file="Background.png"):
+        cv2.imwrite(file, self._bkg_img)
+
+    def load_background(self, file="Background.png"):
+        self._bkg_state = True
         self._bkg_img = cv2.imread(file)
 
     def get_bkg_img(self):
@@ -63,7 +67,10 @@ class BackgroundImageHandler():
     def get_bkg_state(self):
         return self._bkg_state
 
+    def get_table_border(self):
+        return self.bounding_rect
 
+"""
 # Test for calculate_table_border()
 
 BkgHandler = BackgroundImageHandler()
@@ -76,8 +83,9 @@ rect = BkgHandler.calculate_table_border(10)
 
 cv2.imshow("Thresholded Image", BkgHandler._bkg_img_thresh)
 
-rect = cv2.rectangle(BkgHandler.get_bkg_img().copy(),(rect[0][0],rect[0][1]),(rect[1][0],rect[1][1]),(0,255,0),2)
-cv2.imshow("Bounds", rect)
+#rect = cv2.rectangle(BkgHandler.get_bkg_img().copy(),(rect[0][0],rect[0][1]),(rect[1][0],rect[1][1]),(0,255,0),2)
+cv2.imshow("Bounds", BkgHandler.get_bkg_img()[rect[0][1]:rect[1][1], rect[0][0]:rect[1][0]])
 
 cv2.waitKey(0)
 cv2.destroyAllWindows()
+"""
