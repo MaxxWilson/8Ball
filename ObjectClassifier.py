@@ -44,13 +44,13 @@ class ObjectClassifier():
         cv2.imshow("Binary Image", self.binary_img)
 
         # Apply morphological Opening operation to remove noise from binary image
-        kernel = np.ones((8,8),np.uint8)
+        kernel = np.ones((7,7),np.uint8)
         self.binary_img = cv2.morphologyEx(self.binary_img, cv2.MORPH_OPEN, kernel)
         self.binary_img = cv2.morphologyEx(self.binary_img, cv2.MORPH_CLOSE, kernel)
 
     def scan_for_keypoints(self):
         # Detect contours in the Binary Image
-        self.contours, hierarchy = cv2.findContours(self.binary_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE) ## TODO: CHANGED EXTERNAL
+        self.contours, hierarchy = cv2.findContours(self.binary_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         # Clear keypoints between frame scans
         self.keypoints = []
@@ -61,6 +61,12 @@ class ObjectClassifier():
             if A < 50:
                 # If the area is below threshold, it is noise
                 continue
+            elif A < 1000:
+                cv2.putText(img, "Dark Ball", (cX - 20, cY - 20),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+            elif A < 2500:
+                cv2.putText(img, "Single Ball", (cX - 20, cY - 20),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+            else:
+                cv2.putText(img, "Cue or Multi-Ball", (cX - 20, cY - 20),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 
             #M = cv2.moments(c)
             #self.keypoints.append([int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"])])
@@ -77,6 +83,8 @@ class ObjectClassifier():
 
     def classify_striped_solid(self):
         pass
+
+
 
 """
 # Load two images
