@@ -21,7 +21,7 @@ main_window.geometry('150x300')
 main_window.title('8 Ball')
 
 gui_scale = tk.Scale(main_window, from_=0, to=255, orient=tk.HORIZONTAL, length=150, label="Ball Threshold")
-gui_scale.set(6)
+gui_scale.set(10)
 gui_scale.pack(side=tk.BOTTOM)
 
 table_threshold_scale = tk.Scale(main_window, from_=0, to=255, orient=tk.HORIZONTAL, length=150, label="Table Threshold")
