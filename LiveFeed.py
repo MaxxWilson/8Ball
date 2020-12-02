@@ -89,7 +89,7 @@ try:
         difference_image = cv2.absdiff(color_image, BkgHandler.get_bkg_img())
         cv2.imshow('Background Difference', difference_image)
         
-        ObjClassifier.mro
+        ObjClassifier.scan_for_keypoints()
 
         """
         Convert to Grayscale

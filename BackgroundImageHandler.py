@@ -15,6 +15,7 @@ class BackgroundImageHandler():
         self._bkg_img_thresh = None
 
         self.bounding_rect = []
+        self.table_thickness = 100
 
         self.debug_toggle = False
 
@@ -76,8 +77,9 @@ rect = BkgHandler.calculate_table_border(10)
 
 cv2.imshow("Thresholded Image", BkgHandler._bkg_img_thresh)
 
-rect = cv2.rectangle(BkgHandler.get_bkg_img().copy(),(rect[0][0],rect[0][1]),(rect[1][0],rect[1][1]),(0,255,0),2)
-cv2.imshow("Bounds", rect)
+#rect = cv2.rectangle(BkgHandler.get_bkg_img().copy(),(rect[0][0],rect[0][1]),(rect[1][0],rect[1][1]),(0,255,0),2)
+cv2.imshow("Bounds", BkgHandler.get_bkg_img()[rect[0][1]+BkgHandler.table_thickness:rect[1][1]-BkgHandler.table_thickness,
+rect[0][0]+BkgHandler.table_thickness:rect[1][0]-BkgHandler.table_thickness])
 
 cv2.waitKey(0)
 cv2.destroyAllWindows()
