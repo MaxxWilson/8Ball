@@ -1,6 +1,6 @@
 """Defines a class to search for possible balls and cues, identify their geometry in the image, and track them over time"""
 
-
+from collections import deque
 import numpy as np
 import cv2
 
@@ -10,38 +10,75 @@ class ObjectClassifier():
         self.diff_gray = None
         self.binary_img = None
         self.contours = None
+
+        self.frame_arr = deque([], maxlen=4)
+        self.frame_avg = None
         
 
-    def scan_for_keypoints(self, diff_img):
+    def preprocess_for_scan(self, diff_img, ball_threshold):
+        self.diff_img = diff_img
+
+        cv2.imshow("Diff Img", self.diff_img)
+
         # Convert the img to grayscale 
-        self.diff_gray = cv2.cvtColor(diff_img, cv2.COLOR_BGR2GRAY)
+        self.diff_gray = cv2.cvtColor(self.diff_img, cv2.COLOR_BGR2GRAY)
 
         # Apply a Gaussian filter to reduce image noise
-        self.diff_gray = cv2.GaussianBlur(self.diff_gray,(9,9),0)
+        self.diff_gray = cv2.GaussianBlur(self.diff_gray,(11,11),0)
         
+        if len(self.frame_arr) == 0:
+            self.frame_arr.append(self.diff_gray.astype(np.float32, copy=False))
+            self.frame_avg = self.diff_gray
+        elif(np.shape(self.frame_arr[0]) != np.shape(self.diff_gray)):
+            self.frame_arr.clear()
+            self.frame_arr.append(self.diff_gray.astype(np.float32, copy=False))
+            self.frame_avg = self.diff_gray
+        else:
+            self.frame_arr.append(self.diff_gray.astype(np.float32, copy=False))
+            self.frame_avg = (np.sum(self.frame_arr, 0)/len(self.frame_arr)).astype("uint8", copy=False)
+
+        cv2.imshow("Frame Avg", self.frame_avg)
+
         # Apply Binary thresholding with low threshold to highlight balls
-        _, self.binary_img = cv2.threshold(self.diff_gray, 15, 255,cv2.THRESH_BINARY)
+        _, self.binary_img = cv2.threshold(self.frame_avg, ball_threshold, 255,cv2.THRESH_BINARY)
         cv2.imshow("Binary Image", self.binary_img)
 
         # Apply morphological Opening operation to remove noise from binary image
-        kernel = np.ones((10,10),np.uint8)
+        kernel = np.ones((8,8),np.uint8)
         self.binary_img = cv2.morphologyEx(self.binary_img, cv2.MORPH_OPEN, kernel)
         self.binary_img = cv2.morphologyEx(self.binary_img, cv2.MORPH_CLOSE, kernel)
 
-        self.contours, hierarchy = cv2.findContours(self.binary_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    def scan_for_keypoints(self):
+        # Detect contours in the Binary Image
+        self.contours, hierarchy = cv2.findContours(self.binary_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE) ## TODO: CHANGED EXTERNAL
 
+        # Clear keypoints between frame scans
         self.keypoints = []
 
         for c in self.contours:
-            M = cv2.moments(c)
-            # calculate x,y coordinate of center
-            cX = int(M["m10"] / M["m00"])
-            cY = int(M["m01"] / M["m00"])
-            self.keypoints.append([cX, cY, ])
+            A = cv2.contourArea(c)
+
+            if A < 50:
+                # If the area is below threshold, it is noise
+                continue
+
+            #M = cv2.moments(c)
+            #self.keypoints.append([int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"])])
+
+            x,y,w,h = cv2.boundingRect(c)
+            cv2.rectangle(self.diff_img,(x,y),(x+w,y+h),(0,255,0),2)
+
+            #rect = cv2.minAreaRect(c)
+            #box = cv2.boxPoints(rect)
+            #box = np.int0(box)
+            #cv2.drawContours(self.diff_img,[box],0,(0,0,255),2)
+            
+        return self.diff_img
 
     def classify_striped_solid(self):
         pass
 
+"""
 # Load two images
 img = cv2.imread("high_light/2.png")
 bkg = cv2.imread("Background2.png")
@@ -57,12 +94,15 @@ ObjClassifier = ObjectClassifier()
 ObjClassifier.scan_for_keypoints(diff)
 
 for c in ObjClassifier.contours:
-    x,y,w,h = cv2.boundingRect(c)
-    cv2.rectangle(img,(x,y),(x+w,y+h),(0,255,0),2)
+    rect = cv2.minAreaRect(c)
+    box = cv2.boxPoints(rect)
+    box = np.int0(box)
+    cv2.drawContours(img,[box],0,(0,0,255),2)
 
 cv2.imshow("Centroids", img)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
 
 
-numpy.linalg.norm(a-b)
+#numpy.linalg.norm(a-b)
+"""

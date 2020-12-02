@@ -7,7 +7,7 @@ import cv2
 from ShorthandFunctions import *
 
 # Load two images
-img = cv2.imread("high_light/1.png")
+img = cv2.imread("low_light2/10.png")
 bkg = cv2.imread("Background2.png")
 
 # Desnoise the background image to remove noise in our final difference
