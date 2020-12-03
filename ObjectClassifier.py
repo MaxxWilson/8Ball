@@ -11,9 +11,16 @@ class ObjectClassifier():
         self.binary_img = None
         self.contours = None
 
-        self.frame_arr = deque([], maxlen=4)
+        self.frame_arr = deque([], maxlen=6)
         self.frame_avg = None
-        
+
+    def expand_region(self, region, rad):
+        shape = np.shape(self.diff_img)
+        x1 = region[0][0]-rad if region[0][0]-rad > 0 else 0
+        y1 = region[0][1]-rad if region[0][1]-rad > 0 else 0
+        x2 = region[1][0]+rad if region[1][0]+rad < shape[1]-1 else shape[1]-1
+        y2 = region[1][1]+rad if region[1][1]+rad < shape[0]-1 else shape[0]-1
+        return [(x1, y1), (x2, y2)]
 
     def preprocess_for_scan(self, diff_img, ball_threshold):
         self.diff_img = diff_img
@@ -44,9 +51,9 @@ class ObjectClassifier():
         cv2.imshow("Binary Image", self.binary_img)
 
         # Apply morphological Opening operation to remove noise from binary image
-        kernel = np.ones((7,7),np.uint8)
+        kernel = np.ones((6,6),np.uint8)
         self.binary_img = cv2.morphologyEx(self.binary_img, cv2.MORPH_OPEN, kernel)
-        self.binary_img = cv2.morphologyEx(self.binary_img, cv2.MORPH_CLOSE, kernel)
+        self.binary_img = cv2.morphologyEx(self.binary_img, cv2.MORPH_CLOSE, kernel, iterations=2)
 
     def scan_for_keypoints(self):
         # Detect contours in the Binary Image
@@ -57,22 +64,28 @@ class ObjectClassifier():
 
         for c in self.contours:
             A = cv2.contourArea(c)
+            
+            if A < 1400:
+                x,y,w,h = cv2.boundingRect(c)
+                rect = self.expand_region([[x,y],[x+w,y+h]], 20)
+                cv2.rectangle(self.diff_img, rect[0], rect[1],(0,0,255),2)
 
-            if A < 50:
-                # If the area is below threshold, it is noise
-                continue
-            elif A < 1000:
-                cv2.putText(img, "Dark Ball", (cX - 20, cY - 20),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
             elif A < 2500:
-                cv2.putText(img, "Single Ball", (cX - 20, cY - 20),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+                x,y,w,h = cv2.boundingRect(c)
+                rect = self.expand_region([[x,y],[x+w,y+h]], 10)
+                cv2.rectangle(self.diff_img, rect[0], rect[1],(0,0,255),2)
+                
             else:
-                cv2.putText(img, "Cue or Multi-Ball", (cX - 20, cY - 20),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+                x,y,w,h = cv2.boundingRect(c)
+                rect = self.expand_region([[x,y],[x+w,y+h]], 10)
+                cv2.rectangle(self.diff_img, rect[0], rect[1],(0,0,255),2)
 
-            #M = cv2.moments(c)
-            #self.keypoints.append([int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"])])
+            M = cv2.moments(c)
 
-            x,y,w,h = cv2.boundingRect(c)
-            cv2.rectangle(self.diff_img,(x,y),(x+w,y+h),(0,255,0),2)
+            if M["m00"] != 0:
+                cX = int(M["m10"] / M["m00"])
+                cY = int(M["m01"] / M["m00"])
+                cv2.putText(self.diff_img, "Area: " + str(A), (cX - 20, cY - 20),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 
             #rect = cv2.minAreaRect(c)
             #box = cv2.boxPoints(rect)
@@ -99,13 +112,13 @@ dn_bkg = cv2.fastNlMeansDenoisingColored(bkg,None,10,10,7,21)
 diff = cv2.absdiff(dn_bkg, img)
 
 ObjClassifier = ObjectClassifier()
-ObjClassifier.scan_for_keypoints(diff)
+ObjClassifier.preprocess_for_scan(diff, 100)
+ObjClassifier.scan_for_keypoints()
 
 for c in ObjClassifier.contours:
-    rect = cv2.minAreaRect(c)
-    box = cv2.boxPoints(rect)
-    box = np.int0(box)
-    cv2.drawContours(img,[box],0,(0,0,255),2)
+    x,y,w,h = cv2.boundingRect(c)
+    rect = ObjClassifier.expand_region([[x,y],[x+w,y+h]], 20, np.shape(img))
+    cv2.rectangle(img, rect[0], rect[1],(0,0,255),2)
 
 cv2.imshow("Centroids", img)
 cv2.waitKey(0)
