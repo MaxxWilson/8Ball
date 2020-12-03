@@ -5,7 +5,6 @@ from datetime import datetime as dt
 import time
 import sys
 import tkinter as tk
-from DrawCircles import DrawCircles
 
 from BackgroundImageHandler import BackgroundImageHandler
 from ObjectClassifier import ObjectClassifier
@@ -80,6 +79,7 @@ try:
 
         #### TEST PLEASE ####
         if BkgHandler.debug_toggle:
+            rect = BkgHandler.get_table_border()
             table_bounds_img = cv2.rectangle(BkgHandler.get_bkg_img().copy(),(rect[0][0],rect[0][1]),(rect[1][0],rect[1][1]),(0,255,0),2)
             cv2.imshow("Table Border", table_bounds_img)
             cv2.imshow("Table Border Threshold Image", BkgHandler._bkg_img_thresh)
@@ -96,11 +96,16 @@ try:
         #cv2.imshow('Background Difference', difference_image)
         
 
-        ObjClassifier.preprocess_for_scan(difference_image[rect[0][1]:rect[1][1], rect[0][0]:rect[1][0]], ball_threshold)
-        ObjClassifier.scan_for_keypoints()
-        contours = ObjClassifier.draw_search_regions()
+        ObjClassifier.preprocess_for_scan(color_image[rect[0][1]:rect[1][1], rect[0][0]:rect[1][0]], ball_threshold)
+        cv2.imshow("Binary Image", ObjClassifier.frame_avg)
+        
+        #ObjClassifier.scan_for_keypoints()
+        #contours = ObjClassifier.draw_search_regions()
+        #ObjClassifier.find_balls()
+        #circles = ObjClassifier.draw_circles()
 
-        cv2.imshow("Contours", contours)
+        #cv2.imshow("Contours", contours)
+        #cv2.imshow("Circles", circles)
 
         cv2.waitKey(1)
 

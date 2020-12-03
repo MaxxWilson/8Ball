@@ -42,16 +42,13 @@ class ObjectClassifier():
             self.frame_arr.append(self.diff_gray.astype(np.float32, copy=False))
             self.frame_avg = (np.sum(self.frame_arr, 0)/len(self.frame_arr)).astype("uint8", copy=False)
 
-        cv2.imshow("Frame Avg", self.frame_avg)
-
         # Apply Binary thresholding with low threshold to highlight balls
         _, self.binary_img = cv2.threshold(self.frame_avg, ball_threshold, 255,cv2.THRESH_BINARY)
-        cv2.imshow("Binary Image", self.binary_img)
 
         # Apply morphological Opening operation to remove noise from binary image
-        kernel = np.ones((6,6),np.uint8)
-        self.binary_img = cv2.morphologyEx(self.binary_img, cv2.MORPH_OPEN, kernel)
-        self.binary_img = cv2.morphologyEx(self.binary_img, cv2.MORPH_CLOSE, kernel, iterations=2)
+        #kernel = np.ones((6,6),np.uint8)
+        #self.binary_img = cv2.morphologyEx(self.binary_img, cv2.MORPH_OPEN, kernel)
+        #self.binary_img = cv2.morphologyEx(self.binary_img, cv2.MORPH_CLOSE, kernel, iterations=2)
 
     def scan_for_keypoints(self):
         # Detect contours in the Binary Image
@@ -95,12 +92,13 @@ class ObjectClassifier():
         return self.diff_img
     
     def draw_circles(self):
-        if self.circles is not None:
-            self.circles = np.round(self.circles[0, :]).astype("int")
-      
-        for (x, y, r) in self.circles:
-            cv2.circle(self.diff_img, (x, y), r, (0, 0, 255), 4)
-            cv2.rectangle(self.diff_img, (x - 5, y - 5), (x + 5, y + 5), (0, 0, 255), -1)
+        for circles in self.circles:
+            if circles is not None:
+                circles = np.round(circles[0, :]).astype("int")
+        
+                for (x, y, r) in circles:
+                    cv2.circle(self.diff_img, (x, y), r, (0, 0, 255), 4)
+                    cv2.rectangle(self.diff_img, (x - 5, y - 5), (x + 5, y + 5), (0, 0, 255), -1)
         return self.diff_img
 
     def find_balls(self):
