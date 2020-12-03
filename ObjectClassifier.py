@@ -99,7 +99,7 @@ class ObjectClassifier():
 
 
 
-"""
+
 # Load two images
 img = cv2.imread("high_light/2.png")
 bkg = cv2.imread("Background2.png")
@@ -113,17 +113,39 @@ diff = cv2.absdiff(dn_bkg, img)
 
 ObjClassifier = ObjectClassifier()
 ObjClassifier.preprocess_for_scan(diff, 100)
-ObjClassifier.scan_for_keypoints()
+#ObjClassifier.scan_for_keypoints()
+contours, hierarchy = cv2.findContours(ObjClassifier.binary_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-for c in ObjClassifier.contours:
-    x,y,w,h = cv2.boundingRect(c)
-    rect = ObjClassifier.expand_region([[x,y],[x+w,y+h]], 20, np.shape(img))
-    cv2.rectangle(img, rect[0], rect[1],(0,0,255),2)
+count = 1
+for c in contours:
+    A = cv2.contourArea(c)
 
-cv2.imshow("Centroids", img)
+    if A < 1400:
+        x,y,w,h = cv2.boundingRect(c)
+        rect = ObjClassifier.expand_region([[x,y],[x+w,y+h]], 20)
+        cv2.rectangle(diff, rect[0], rect[1],(0,0,255),2)
+
+    elif A < 2500:
+        x,y,w,h = cv2.boundingRect(c)
+        rect = ObjClassifier.expand_region([[x,y],[x+w,y+h]], 10)
+        cv2.rectangle(diff, rect[0], rect[1],(0,0,255),2)
+        
+    else:
+        x,y,w,h = cv2.boundingRect(c)
+        rect = ObjClassifier.expand_region([[x,y],[x+w,y+h]], 10)
+        cv2.rectangle(diff, rect[0], rect[1],(0,0,255),2)
+
+    M = cv2.moments(c)
+
+    if M["m00"] != 0:
+        cX = int(M["m10"] / M["m00"])
+        cY = int(M["m01"] / M["m00"])
+        cv2.putText(diff, str(count) + " Area: " + str(A), (cX - 20, cY - 20),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+    count += 1
+
+cv2.imshow("Centroids", ObjClassifier.diff_img)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
 
 
 #numpy.linalg.norm(a-b)
-"""
