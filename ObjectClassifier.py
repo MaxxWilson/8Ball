@@ -99,9 +99,9 @@ class ObjectClassifier():
             self.circles = np.round(self.circles[0, :]).astype("int")
       
         for (x, y, r) in self.circles:
-            cv2.circle(img, (x, y), r, (0, 0, 255), 4)
-            cv2.rectangle(img, (x - 5, y - 5), (x + 5, y + 5), (0, 0, 255), -1)
-        return img
+            cv2.circle(self.diff_img, (x, y), r, (0, 0, 255), 4)
+            cv2.rectangle(self.diff_img, (x - 5, y - 5), (x + 5, y + 5), (0, 0, 255), -1)
+        return self.diff_img
 
     def find_balls(self):
         self.circles = []
@@ -120,7 +120,7 @@ class ObjectClassifier():
 
 
 
-
+"""
 # Load two images
 img = cv2.imread("high_light/2.png")
 bkg = cv2.imread("Background2.png")
@@ -159,3 +159,4 @@ for i in range(len(contours)):
 cv2.imshow("Centroids", ObjClassifier.diff_img)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
+"""
