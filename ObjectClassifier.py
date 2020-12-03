@@ -16,10 +16,8 @@ class ObjectClassifier():
 
     def expand_region(self, region, rad):
         shape = np.shape(self.diff_img)
-        x1 = region[0][0]-rad if region[0][0]-rad > 0 else 0
-        y1 = region[0][1]-rad if region[0][1]-rad > 0 else 0
-        x2 = region[1][0]+rad if region[1][0]+rad < shape[1]-1 else shape[1]-1
-        y2 = region[1][1]+rad if region[1][1]+rad < shape[0]-1 else shape[0]-1
+        x1, y1 = max(region[0][0]-rad, 0), max(region[0][1]-rad, 0)
+        x2, y2 = min(region[1][0]+rad, shape[1]-1), min(region[1][1]+rad, shape[0]-1)
         return [(x1, y1), (x2, y2)]
 
     def preprocess_for_scan(self, diff_img, ball_threshold):
@@ -60,39 +58,62 @@ class ObjectClassifier():
         self.contours, hierarchy = cv2.findContours(self.binary_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         # Clear keypoints between frame scans
-        self.keypoints = []
+        self.search_regions = {"Small": [], "Medium": [], "Large": []}
 
         for c in self.contours:
             A = cv2.contourArea(c)
-            
+
             if A < 1400:
-                x,y,w,h = cv2.boundingRect(c)
-                rect = self.expand_region([[x,y],[x+w,y+h]], 20)
-                cv2.rectangle(self.diff_img, rect[0], rect[1],(0,0,255),2)
-
+                radius_pad = 20
+                region_type = "Small"
             elif A < 2500:
-                x,y,w,h = cv2.boundingRect(c)
-                rect = self.expand_region([[x,y],[x+w,y+h]], 10)
-                cv2.rectangle(self.diff_img, rect[0], rect[1],(0,0,255),2)
-                
+                radius_pad = 10
+                region_type = "Medium"
             else:
-                x,y,w,h = cv2.boundingRect(c)
-                rect = self.expand_region([[x,y],[x+w,y+h]], 10)
-                cv2.rectangle(self.diff_img, rect[0], rect[1],(0,0,255),2)
+                radius_pad = 10
+                region_type = "Large"
+            
+            x,y,w,h = cv2.boundingRect(c)
+            self.search_regions[region_type].append(self.expand_region([[x,y],[x+w,y+h]], radius_pad))
+            
+            #M = cv2.moments(c)
 
-            M = cv2.moments(c)
-
-            if M["m00"] != 0:
-                cX = int(M["m10"] / M["m00"])
-                cY = int(M["m01"] / M["m00"])
-                cv2.putText(self.diff_img, "Area: " + str(A), (cX - 20, cY - 20),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+            #if M["m00"] != 0:
+            #    cX = int(M["m10"] / M["m00"])
+            #    cY = int(M["m01"] / M["m00"])
+            #    cv2.putText(self.diff_img, "Area: " + str(A), (cX - 20, cY - 20),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 
             #rect = cv2.minAreaRect(c)
             #box = cv2.boxPoints(rect)
             #box = np.int0(box)
             #cv2.drawContours(self.diff_img,[box],0,(0,0,255),2)
-            
+
+    def draw_search_regions(self):
+        for region in self.search_regions.keys():
+            for rect in self.search_regions.get(region):
+                cv2.rectangle(self.diff_img, rect[0], rect[1],(0,0,255),2)
         return self.diff_img
+    
+    def draw_circles(self):
+        if self.circles is not None:
+            self.circles = np.round(self.circles[0, :]).astype("int")
+      
+        for (x, y, r) in self.circles:
+            cv2.circle(img, (x, y), r, (0, 0, 255), 4)
+            cv2.rectangle(img, (x - 5, y - 5), (x + 5, y + 5), (0, 0, 255), -1)
+        return img
+
+    def find_balls(self):
+        self.circles = []
+
+        for rect in self.search_regions.get("Small"):
+            self.circles.append(cv2.HoughCircles(self.frame_avg, cv2.HOUGH_GRADIENT, 1, 40, param1=100, param2=7, minRadius = 20, maxRadius = 25))
+
+        for rect in self.search_regions.get("Medium"):
+            self.circles.append(cv2.HoughCircles(self.frame_avg, cv2.HOUGH_GRADIENT, 1, 40, param1=100, param2=7, minRadius = 20, maxRadius = 25))
+
+        for rect in self.search_regions.get("Large"):
+            self.circles.append(cv2.HoughCircles(self.frame_avg, cv2.HOUGH_GRADIENT, 1, 40, param1=100, param2=7, minRadius = 20, maxRadius = 25))
 
     def classify_striped_solid(self):
         pass
@@ -116,36 +137,25 @@ ObjClassifier.preprocess_for_scan(diff, 100)
 #ObjClassifier.scan_for_keypoints()
 contours, hierarchy = cv2.findContours(ObjClassifier.binary_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
+centroids = []
+
 count = 1
-for c in contours:
-    A = cv2.contourArea(c)
+for i in range(len(contours)):
+    A = cv2.contourArea(contours[i])
+
+    x,y,w,h = cv2.boundingRect(contours[i])
 
     if A < 1400:
-        x,y,w,h = cv2.boundingRect(c)
         rect = ObjClassifier.expand_region([[x,y],[x+w,y+h]], 20)
-        cv2.rectangle(diff, rect[0], rect[1],(0,0,255),2)
-
     elif A < 2500:
-        x,y,w,h = cv2.boundingRect(c)
         rect = ObjClassifier.expand_region([[x,y],[x+w,y+h]], 10)
-        cv2.rectangle(diff, rect[0], rect[1],(0,0,255),2)
-        
     else:
-        x,y,w,h = cv2.boundingRect(c)
         rect = ObjClassifier.expand_region([[x,y],[x+w,y+h]], 10)
-        cv2.rectangle(diff, rect[0], rect[1],(0,0,255),2)
 
-    M = cv2.moments(c)
+    cv2.rectangle(diff, rect[0], rect[1],(0,0,255),2)
 
-    if M["m00"] != 0:
-        cX = int(M["m10"] / M["m00"])
-        cY = int(M["m01"] / M["m00"])
-        cv2.putText(diff, str(count) + " Area: " + str(A), (cX - 20, cY - 20),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
     count += 1
 
 cv2.imshow("Centroids", ObjClassifier.diff_img)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
-
-
-#numpy.linalg.norm(a-b)

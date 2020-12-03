@@ -3,8 +3,9 @@ import numpy as np
 import cv2
 from datetime import datetime as dt
 import time
-import os
+import sys
 import tkinter as tk
+from DrawCircles import DrawCircles
 
 from BackgroundImageHandler import BackgroundImageHandler
 from ObjectClassifier import ObjectClassifier
@@ -52,12 +53,8 @@ config = rs.config()
 config.enable_stream(rs.stream.color, 1920, 1080, rs.format.bgr8, 30)
 pipeline.start(config)
 
-# Load Background
-bkg = cv2.imread("Background2.png")
-
 try:
     while(True):
-
         # Wait for frames
         frames = pipeline.wait_for_frames()
         color_frame = frames.get_color_frame()
@@ -81,18 +78,16 @@ try:
 
         rect = BkgHandler.get_table_border()
 
-        #bkg_removed = cv2.absdiff(color_image, bkg)
-        cv2.imshow('Real Sense', color_image)
-        img_gray = cv2.cvtColor(color_image, cv2.COLOR_BGR2GRAY) 
-        ret,thresh1 = cv2.threshold(img_gray, 40, 255, cv2.THRESH_BINARY)  # 16?
-        #blur = cv.GaussianBlur(img_gray,(5,5),0)  #Create a gaussian blur to remove noise and pass through Otsu thresholding
-        #ret,thresh1 = cv.threshold(blur,0,255,cv.THRESH_BINARY+cv.THRESH_OTSU)
-        #thresh1 = cv.adaptiveThreshold(img,255,cv.ADAPTIVE_THRESH_GAUSSIAN_C,cv.THRESH_BINARY,11,2) #alternatively use an adaptive threshold with gaussian noise reduction
+        #### TEST PLEASE ####
+        if BkgHandler.debug_toggle:
+            table_bounds_img = cv2.rectangle(BkgHandler.get_bkg_img().copy(),(rect[0][0],rect[0][1]),(rect[1][0],rect[1][1]),(0,255,0),2)
+            cv2.imshow("Table Border", table_bounds_img)
+            cv2.imshow("Table Border Threshold Image", BkgHandler._bkg_img_thresh)
 
         #cv2.imshow("Background", BkgHandler.get_bkg_img())
 
         
-        
+    
         
         # At this point, we have a background image and a border, yea?
         # Next step is to subtract background image and restrict search area, then look for balls and cues
@@ -102,51 +97,10 @@ try:
         
 
         ObjClassifier.preprocess_for_scan(difference_image[rect[0][1]:rect[1][1], rect[0][0]:rect[1][0]], ball_threshold)
-        contours = ObjClassifier.scan_for_keypoints()
+        ObjClassifier.scan_for_keypoints()
+        contours = ObjClassifier.draw_search_regions()
 
         cv2.imshow("Contours", contours)
-
-        """
-        Convert to Grayscale
-        Look at difference feed
-        (Optional) Apply Gaussian
-        Threshold to highlight balls and cue (split)
-        
-        #### Balls ####
-        Open-Close
-        (Optional) Contours and Edge Detection?
-        (IDK) Partition into segments
-        Apply Min Enclosing Circle / Hough Circles with new thresholding
-
-        #### Cue ####
-        """
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        """
-        # Apply a Gaussian filter to reduce image noise
-        blur = cv2.GaussianBlur(diff_gray,(5,5),0)
-
-        ret,thresh1 = cv2.threshold(blur, threshold_value, 255, cv2.THRESH_BINARY)  # 30?
-        
-        cv2.imshow("threshold", thresh1)
-
-        #edges = cv2.Canny(thresh1, 400,  500)
-        #cv2.imshow("edges", edges)
-
-        #cv2.imshow('RealSense', cv2.Canny(color_image, 200, 250))  # 400/550
-
-        # detect circles in the image
-        DrawCircles(thresh, diff)
-        """
 
         cv2.waitKey(1)
 
