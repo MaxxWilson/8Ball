@@ -18,9 +18,10 @@ class ObjectClassifier():
         shape = np.shape(self.diff_img)
         x1, y1 = max(region[0][0]-rad, 0), max(region[0][1]-rad, 0)
         x2, y2 = min(region[1][0]+rad, shape[1]-1), min(region[1][1]+rad, shape[0]-1)
-        return [(x1, y1), (x2, y2)]
+        return np.array([(x1, y1), (x2, y2)])
 
-    def preprocess_for_scan(self, diff_img, ball_threshold):
+    def preprocess_for_scan(self, img, diff_img, ball_threshold):
+        self.img = img
         self.diff_img = diff_img
 
         cv2.imshow("Diff Img", self.diff_img)
@@ -46,9 +47,9 @@ class ObjectClassifier():
         _, self.binary_img = cv2.threshold(self.frame_avg, ball_threshold, 255,cv2.THRESH_BINARY)
 
         # Apply morphological Opening operation to remove noise from binary image
-        #kernel = np.ones((6,6),np.uint8)
-        #self.binary_img = cv2.morphologyEx(self.binary_img, cv2.MORPH_OPEN, kernel)
-        #self.binary_img = cv2.morphologyEx(self.binary_img, cv2.MORPH_CLOSE, kernel, iterations=2)
+        kernel = np.ones((8,8),np.uint8)
+        self.binary_img = cv2.morphologyEx(self.binary_img, cv2.MORPH_OPEN, kernel)
+        self.binary_img = cv2.morphologyEx(self.binary_img, cv2.MORPH_CLOSE, kernel, iterations=2)
 
     def scan_for_keypoints(self):
         # Detect contours in the Binary Image
@@ -88,7 +89,7 @@ class ObjectClassifier():
     def draw_search_regions(self):
         for region in self.search_regions.keys():
             for rect in self.search_regions.get(region):
-                cv2.rectangle(self.diff_img, rect[0], rect[1],(0,0,255),2)
+                cv2.rectangle(self.diff_img, tuple(rect[0]), tuple(rect[1]),(0,0,255),2)
         return self.diff_img
     
     def draw_circles(self):
@@ -104,6 +105,8 @@ class ObjectClassifier():
     def find_balls(self):
         self.circles = []
 
+        # No Search Region Indexing dumb bitch
+
         for rect in self.search_regions.get("Small"):
             self.circles.append(cv2.HoughCircles(self.frame_avg, cv2.HOUGH_GRADIENT, 1, 40, param1=100, param2=7, minRadius = 20, maxRadius = 25))
 
@@ -112,6 +115,28 @@ class ObjectClassifier():
 
         for rect in self.search_regions.get("Large"):
             self.circles.append(cv2.HoughCircles(self.frame_avg, cv2.HOUGH_GRADIENT, 1, 40, param1=100, param2=7, minRadius = 20, maxRadius = 25))
+
+    def save_regions(self):
+
+        PATH = "/home/maxx/DIP/8Ball/test_regions/"
+        picture_count = 1
+        for rect in self.search_regions.get("Small"):
+            cv2.imwrite(PATH + "Small" + str(picture_count) + ".png", self.img[rect[0, 1]:rect[1, 1], rect[0, 0]:rect[1, 0]])
+            picture_count += 1
+        
+        picture_count = 1
+        for rect in self.search_regions.get("Medium"):
+            cv2.imwrite(PATH + "Medium" + str(picture_count) + ".png", self.img[rect[0, 1]:rect[1, 1], rect[0, 0]:rect[1, 0]])
+            picture_count += 1
+
+        picture_count = 1
+        for rect in self.search_regions.get("Large"):
+            cv2.imwrite(PATH + "Large" + str(picture_count) + ".png", self.img[rect[0, 1]:rect[1, 1], rect[0, 0]:rect[1, 0]])
+            picture_count += 1
+
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
 
     def classify_striped_solid(self):
         pass

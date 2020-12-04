@@ -15,6 +15,7 @@ class BackgroundImageHandler():
         self._bkg_img_thresh = None
 
         self.bounding_rect = []
+        
         self.table_thickness = 100
 
         self.debug_toggle = False
@@ -32,12 +33,19 @@ class BackgroundImageHandler():
         elif self._avg_counter == 0:
             self._bkg_img = (self._bkg_img / self._img_count).astype("uint8", copy=False)
             self._bkg_state = True
-            self._calculate_table_border(10)
+            self.calculate_table_border(8)
 
-    def _calculate_table_border(self, threshold):
+    def calculate_table_border(self, threshold):
         
         self._bkg_img_gray = cv2.cvtColor(self._bkg_img, cv2.COLOR_BGR2GRAY)
+        self._bkg_img_gray = cv2.medianBlur(self._bkg_img_gray, 5)
         _, self._bkg_img_thresh = cv2.threshold(self._bkg_img_gray, threshold, 255, cv2.THRESH_BINARY_INV)
+        
+        kernel = np.ones((10,10),np.uint8)
+        
+        self.binary_img = cv2.morphologyEx(self._bkg_img_thresh, cv2.MORPH_OPEN, kernel, iterations=2)
+        self.binary_img = cv2.morphologyEx(self._bkg_img_thresh, cv2.MORPH_CLOSE, kernel, iterations=2)
+        
         x, y, w, h = cv2.boundingRect(self._bkg_img_thresh)
         self.bounding_rect = [[x+self.table_thickness, y+self.table_thickness], [x+w-self.table_thickness, y+h-self.table_thickness]]
 

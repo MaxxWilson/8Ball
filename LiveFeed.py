@@ -46,6 +46,9 @@ bkg_debug_toggle_btn.pack()
 exit_btn = tk.Button(main_window, text="Exit", command=main_window.destroy, width=150)
 exit_btn.pack()
 
+save_search_regions_btn = tk.Button(main_window, text="Save Regions", command=ObjClassifier.save_regions, width=150)
+save_search_regions_btn.pack()
+
 #### Initialize Camera ####
 pipeline = rs.pipeline()
 config = rs.config()
@@ -69,6 +72,8 @@ try:
         main_window.update()
         main_window.update_idletasks()
         ball_threshold = gui_scale.get()
+        table_threshold = table_threshold_scale.get()
+
 
         #### Capture Static Background ####
         if BkgHandler.get_bkg_state() == False:
@@ -79,6 +84,7 @@ try:
 
         #### TEST PLEASE ####
         if BkgHandler.debug_toggle:
+            BkgHandler.calculate_table_border(table_threshold)
             rect = BkgHandler.get_table_border()
             table_bounds_img = cv2.rectangle(BkgHandler.get_bkg_img().copy(),(rect[0][0],rect[0][1]),(rect[1][0],rect[1][1]),(0,255,0),2)
             cv2.imshow("Table Border", table_bounds_img)
@@ -96,15 +102,15 @@ try:
         #cv2.imshow('Background Difference', difference_image)
         
 
-        ObjClassifier.preprocess_for_scan(color_image[rect[0][1]:rect[1][1], rect[0][0]:rect[1][0]], ball_threshold)
-        cv2.imshow("Binary Image", ObjClassifier.frame_avg)
+        ObjClassifier.preprocess_for_scan(color_image[rect[0][1]:rect[1][1], rect[0][0]:rect[1][0]], difference_image[rect[0][1]:rect[1][1], rect[0][0]:rect[1][0]], ball_threshold)
+        cv2.imshow("Binary Image", ObjClassifier.binary_img)
         
-        #ObjClassifier.scan_for_keypoints()
-        #contours = ObjClassifier.draw_search_regions()
+        ObjClassifier.scan_for_keypoints()
+        contours = ObjClassifier.draw_search_regions()
         #ObjClassifier.find_balls()
         #circles = ObjClassifier.draw_circles()
 
-        #cv2.imshow("Contours", contours)
+        cv2.imshow("Contours", contours)
         #cv2.imshow("Circles", circles)
 
         cv2.waitKey(1)

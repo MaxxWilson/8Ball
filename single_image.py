@@ -10,6 +10,12 @@ from ShorthandFunctions import *
 img = cv2.imread("low_light2/10.png")
 bkg = cv2.imread("Background2.png")
 
+cv2.imshow("IMG", img)
+cv2.imshow("partition", img[50:60, 78:200])
+
+
+impause()
+
 # Desnoise the background image to remove noise in our final difference
 dn_bkg = cv2.fastNlMeansDenoisingColored(bkg,None,10,10,7,21)
 #cv2.imshow("img", img)
