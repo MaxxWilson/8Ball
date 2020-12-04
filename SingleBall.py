@@ -1,22 +1,12 @@
 import numpy as np
 import time
 import matplotlib.pyplot as plt
-
-from ShorthandFunctions import *
-
+import cv2
 # Load two images
-img = cv2.imread("low_light2/4.png")
-bkg = cv2.imread("Background2.png")
-
-# Desnoise the background image to remove noise in our final difference
-dn_bkg = cv2.fastNlMeansDenoisingColored(bkg,None,10,10,7,21)
-#cv2.imshow("img", img)
-
-blueball = img[200:300, 650:750]
-cv2.imshow("blueball", blueball)
+large2 = cv2.imread("test_regions/Medium4.png")
 
 # Convert the img to grayscale 
-diff_gray = cv2.cvtColor(blueball, cv2.COLOR_BGR2GRAY)
+diff_gray = cv2.cvtColor(large2, cv2.COLOR_BGR2GRAY)
 # Apply a Gaussian filter to reduce image noise
 blur = cv2.GaussianBlur(diff_gray,(5,5),0)
 cv2.imshow("blur", blur)
@@ -31,9 +21,7 @@ cv2.imshow("Adaptive", th2)
 cv2.imshow("Edges", cv2.Canny(blur, 0, 10))
 
 # detect circles in the image
-circles = cv2.HoughCircles(th2, cv2.HOUGH_GRADIENT, 1, 40, param1=100, param2=7, minRadius = 20, maxRadius = 25)
-
-print(circles)
+circles = cv2.HoughCircles(thresh1, cv2.HOUGH_GRADIENT, 1, 60, param1=100, param2=7, minRadius = 20, maxRadius = 25)
 
 # ensure at least some circles were found
 if circles is not None:
@@ -43,10 +31,10 @@ if circles is not None:
     for (x, y, r) in circles:
         # draw the circle in the output image, then draw a rectangle
         # corresponding to the center of the circle
-        cv2.circle(blueball, (x, y), r, (0, 0, 255), 4)
-        cv2.rectangle(blueball, (x - 5, y - 5), (x + 5, y + 5), (0, 0, 255), -1)
+        cv2.circle(large2, (x, y), r, (0, 0, 255), 4)
+        cv2.rectangle(large2, (x - 5, y - 5), (x + 5, y + 5), (0, 0, 255), -1)
     # show the output image
-    cv2.imshow("output", blueball)
+    cv2.imshow("output", large2)
     cv2.waitKey(0)
 
 cv2.waitKey(0)
