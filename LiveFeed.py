@@ -111,7 +111,7 @@ try:
         circles = ObjClassifier.draw_circles()
 
         cv2.imshow("Contours", contours)
-        cv2.imshow("Circles", circles)
+        #cv2.imshow("Circles", circles)
 
         cv2.waitKey(1)
 

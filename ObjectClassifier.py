@@ -13,7 +13,7 @@ class ObjectClassifier():
 
         self.circles = []
 
-        self.frame_arr = deque([], maxlen=6)
+        self.frame_arr = deque([], maxlen=4)
         self.frame_avg = None
 
     def expand_region(self, region, rad):
@@ -121,30 +121,40 @@ class ObjectClassifier():
     
     def region_detect_ball_segment(self, im_rgn, lead_point):
         _, thresh = cv2.threshold(im_rgn, 10, 255,cv2.THRESH_BINARY)
-        print("Ball Seg")
-        cv2.imshow("BALL SEGMENT", thresh)
         circles = cv2.HoughCircles(thresh, cv2.HOUGH_GRADIENT, 1, 40, param1=100, param2=7, minRadius = 15, maxRadius = 25)
         self.circles.append(self.transform_circles_to_full_img(lead_point, circles))
-        pass
 
     def region_detect_single_ball(self, im_rgn, lead_point):
         _, thresh = cv2.threshold(im_rgn, 15, 255,cv2.THRESH_BINARY)
-        print("SINGLE BALL")
-        cv2.imshow("SINGLE BALL", thresh)
         circles = cv2.HoughCircles(thresh, cv2.HOUGH_GRADIENT, 1, 40, param1=100, param2=7, minRadius = 15, maxRadius = 25)
         self.circles.append(self.transform_circles_to_full_img(lead_point, circles))
-        pass
 
     def region_detect_multi_ball(self, im_rgn, lead_point):
         _, thresh = cv2.threshold(im_rgn, 15, 255,cv2.THRESH_BINARY)
-        print("MULTI BALL")
-        cv2.imshow("MULTI BALL", thresh)
         circles = cv2.HoughCircles(thresh, cv2.HOUGH_GRADIENT, 1, 40, param1=100, param2=7, minRadius = 15, maxRadius = 25)
         self.circles.append(self.transform_circles_to_full_img(lead_point, circles))
-        pass
 
-    def region_detect_cue(self, img_rgn, lead_point):
-        pass
+    def region_detect_cue(self, im_rgn, lead_point):
+        _, thresh = cv2.threshold(im_rgn, 81, 255,cv2.THRESH_BINARY)
+        cv2.imshow("CUE", thresh)
+        contours, hierarchy = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+        
+        if len(contours) == 0:
+            return
+
+        area = []
+        for c in contours:
+            area.append(cv2.contourArea(c))
+
+        [vx,vy,x,y] = cv2.fitLine(contours[np.where(np.array(area)==np.max(area))[0][0]], cv2.DIST_L2,0,0.01,0.01)
+
+        x2 = x + lead_point[0]
+        y2 = y + lead_point[1]
+
+        cols = np.shape(self.diff_img)[1]
+        lefty = int((-x2*vy/vx) + y2)
+        righty = int(((cols-x2)*vy/vx)+y2)
+        cv2.line(self.diff_img,(cols-1,righty),(0,lefty),(0,255,0),2)
 
     def transform_circles_to_full_img(self, rectangle, circles):
         if circles is not None:
