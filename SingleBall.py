@@ -3,7 +3,7 @@ import time
 import matplotlib.pyplot as plt
 import cv2
 # Load two images
-large2 = cv2.imread("test_regions/Large2.png")
+large2 = cv2.imread("test_regions/Multi Ball2_diff.png")
 
 # Convert the img to grayscale 
 diff_gray = cv2.cvtColor(large2, cv2.COLOR_BGR2GRAY)
@@ -14,7 +14,7 @@ cv2.imshow("blur", blur)
 
 th2 = cv2.adaptiveThreshold(blur,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 25, 6)
 # Apply Binary thresholding with low threshold to highlight balls
-ret,thresh1 = cv2.threshold(blur, 30, 255,cv2.THRESH_BINARY)
+ret,thresh1 = cv2.threshold(blur, 20, 255,cv2.THRESH_BINARY)
 
 cv2.imshow("Thresholded", thresh1)
 cv2.imshow("Adaptive", th2)
@@ -22,7 +22,9 @@ cv2.imshow("Adaptive", th2)
 cv2.imshow("Edges", cv2.Canny(thresh1, 0, 45))
 
 # detect circles in the image
-circles = cv2.HoughCircles(thresh1, cv2.HOUGH_GRADIENT, 1, 60, param1=100, param2=7, minRadius = 20, maxRadius = 25)[0, :]
+circles = cv2.HoughCircles(thresh1, cv2.HOUGH_GRADIENT, 1, 40, param1=100, param2=7, minRadius = 20, maxRadius = 25)[0, :]
+
+print(circles)
 
 # ensure at least some circles were found
 if circles is not None:

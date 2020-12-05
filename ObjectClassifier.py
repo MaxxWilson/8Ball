@@ -104,34 +104,34 @@ class ObjectClassifier():
         # No Search Region Indexing dumb bitch
 
         for rect in self.search_regions.get("Ball Segment"):
-            img_rgn = self.diff_gray[rect[0, 1]:rect[1, 1], rect[0, 0]:rect[1, 0]]
+            img_rgn = self.frame_avg[rect[0, 1]:rect[1, 1], rect[0, 0]:rect[1, 0]]
             self.region_detect_ball_segment(img_rgn, rect[0])
 
         for rect in self.search_regions.get("Single Ball"):
-            img_rgn = self.diff_gray[rect[0, 1]:rect[1, 1], rect[0, 0]:rect[1, 0]]
+            img_rgn = self.frame_avg[rect[0, 1]:rect[1, 1], rect[0, 0]:rect[1, 0]]
             self.region_detect_single_ball(img_rgn, rect[0])
 
         for rect in self.search_regions.get("Multi Ball"):
-            img_rgn = self.diff_gray[rect[0, 1]:rect[1, 1], rect[0, 0]:rect[1, 0]]
+            img_rgn = self.frame_avg[rect[0, 1]:rect[1, 1], rect[0, 0]:rect[1, 0]]
             self.region_detect_multi_ball(img_rgn, rect[0])
 
         for rect in self.search_regions.get("Cue"):
-            img_rgn = self.diff_gray[rect[0, 1]:rect[1, 1], rect[0, 0]:rect[1, 0]]
+            img_rgn = self.frame_avg[rect[0, 1]:rect[1, 1], rect[0, 0]:rect[1, 0]]
             self.region_detect_cue(img_rgn, rect[0])
     
     def region_detect_ball_segment(self, im_rgn, lead_point):
-        _, thresh = cv2.threshold(im_rgn, 15, 255,cv2.THRESH_BINARY)
+        _, thresh = cv2.threshold(im_rgn, 10, 255,cv2.THRESH_BINARY)
         print("Ball Seg")
         cv2.imshow("BALL SEGMENT", thresh)
-        circles = cv2.HoughCircles(thresh, cv2.HOUGH_GRADIENT, 1, 50, param1=100, param2=7, minRadius = 20, maxRadius = 25)
+        circles = cv2.HoughCircles(thresh, cv2.HOUGH_GRADIENT, 1, 40, param1=100, param2=7, minRadius = 15, maxRadius = 25)
         self.circles.append(self.transform_circles_to_full_img(lead_point, circles))
         pass
 
     def region_detect_single_ball(self, im_rgn, lead_point):
-        _, thresh = cv2.threshold(im_rgn, 25, 255,cv2.THRESH_BINARY)
+        _, thresh = cv2.threshold(im_rgn, 15, 255,cv2.THRESH_BINARY)
         print("SINGLE BALL")
         cv2.imshow("SINGLE BALL", thresh)
-        circles = cv2.HoughCircles(thresh, cv2.HOUGH_GRADIENT, 1, 50, param1=100, param2=7, minRadius = 20, maxRadius = 25)
+        circles = cv2.HoughCircles(thresh, cv2.HOUGH_GRADIENT, 1, 40, param1=100, param2=7, minRadius = 15, maxRadius = 25)
         self.circles.append(self.transform_circles_to_full_img(lead_point, circles))
         pass
 
@@ -139,7 +139,7 @@ class ObjectClassifier():
         _, thresh = cv2.threshold(im_rgn, 15, 255,cv2.THRESH_BINARY)
         print("MULTI BALL")
         cv2.imshow("MULTI BALL", thresh)
-        circles = cv2.HoughCircles(thresh, cv2.HOUGH_GRADIENT, 1, 50, param1=100, param2=7, minRadius = 20, maxRadius = 25)
+        circles = cv2.HoughCircles(thresh, cv2.HOUGH_GRADIENT, 1, 40, param1=100, param2=7, minRadius = 15, maxRadius = 25)
         self.circles.append(self.transform_circles_to_full_img(lead_point, circles))
         pass
 
