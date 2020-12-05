@@ -105,13 +105,13 @@ try:
         ObjClassifier.preprocess_for_scan(color_image[rect[0][1]:rect[1][1], rect[0][0]:rect[1][0]], difference_image[rect[0][1]:rect[1][1], rect[0][0]:rect[1][0]], ball_threshold)
         cv2.imshow("Binary Image", ObjClassifier.binary_img)
         
-        ObjClassifier.scan_for_keypoints()
+        ObjClassifier.scan_for_key_regions()
         contours = ObjClassifier.draw_search_regions()
-        #ObjClassifier.find_balls()
-        #circles = ObjClassifier.draw_circles()
+        ObjClassifier.identify_balls()
+        circles = ObjClassifier.draw_circles()
 
         cv2.imshow("Contours", contours)
-        #cv2.imshow("Circles", circles)
+        cv2.imshow("Circles", circles)
 
         cv2.waitKey(1)
 

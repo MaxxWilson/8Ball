@@ -3,12 +3,13 @@ import time
 import matplotlib.pyplot as plt
 import cv2
 # Load two images
-large2 = cv2.imread("test_regions/Medium4.png")
+large2 = cv2.imread("test_regions/Large2.png")
 
 # Convert the img to grayscale 
 diff_gray = cv2.cvtColor(large2, cv2.COLOR_BGR2GRAY)
 # Apply a Gaussian filter to reduce image noise
-blur = cv2.GaussianBlur(diff_gray,(5,5),0)
+#blur = cv2.GaussianBlur(diff_gray,(5,5),0)
+blur = diff_gray
 cv2.imshow("blur", blur)
 
 th2 = cv2.adaptiveThreshold(blur,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 25, 6)
@@ -18,15 +19,15 @@ ret,thresh1 = cv2.threshold(blur, 30, 255,cv2.THRESH_BINARY)
 cv2.imshow("Thresholded", thresh1)
 cv2.imshow("Adaptive", th2)
 
-cv2.imshow("Edges", cv2.Canny(blur, 0, 10))
+cv2.imshow("Edges", cv2.Canny(thresh1, 0, 45))
 
 # detect circles in the image
-circles = cv2.HoughCircles(thresh1, cv2.HOUGH_GRADIENT, 1, 60, param1=100, param2=7, minRadius = 20, maxRadius = 25)
+circles = cv2.HoughCircles(thresh1, cv2.HOUGH_GRADIENT, 1, 60, param1=100, param2=7, minRadius = 20, maxRadius = 25)[0, :]
 
 # ensure at least some circles were found
 if circles is not None:
     # convert the (x, y) coordinates and radius of the circles to integers
-    circles = np.round(circles[0, :]).astype("int")
+    circles = np.round(circles).astype("int")
     # loop over the (x, y) coordinates and radius of the circles
     for (x, y, r) in circles:
         # draw the circle in the output image, then draw a rectangle
