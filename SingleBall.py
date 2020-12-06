@@ -2,9 +2,31 @@ import numpy as np
 import time
 import matplotlib.pyplot as plt
 import cv2
-# Load two images
-large2 = cv2.imread("test_regions/Multi Ball2_diff.png")
 
+# Load two images
+large2 = cv2.imread("test_regions/Medium5.png")
+
+white = [255, 255, 255]  # RGB
+diff = 60
+boundaries = [([white[2]-diff, white[1]-diff, white[0]-diff],[white[2], white[1], white[0]])]
+
+def colorPicker (img, boundaries):
+    for (lower, upper) in boundaries:
+        lower = np.array(lower, dtype=np.uint8)
+        upper = np.array(upper, dtype=np.uint8)
+        mask = cv2.inRange(img, lower, upper)
+        output = cv2.bitwise_and(img, img, mask=mask)
+        
+        print("white pix count: ", cv2.countNonZero(mask))
+        #ratio_white = cv2.countNonZero(mask)/(img.size/3)
+        #print('white pixel percentage:', np.round(ratio_white*100, 2))
+
+        cv2.imshow("images", np.hstack([img, output]))
+        #cv2.waitKey(0)
+
+colorPicker(large2, boundaries)
+
+"""
 # Convert the img to grayscale 
 diff_gray = cv2.cvtColor(large2, cv2.COLOR_BGR2GRAY)
 # Apply a Gaussian filter to reduce image noise
@@ -39,6 +61,6 @@ if circles is not None:
     # show the output image
     cv2.imshow("output", large2)
     cv2.waitKey(0)
-
+"""
 cv2.waitKey(0)
 cv2.destroyAllWindows()

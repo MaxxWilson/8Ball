@@ -16,7 +16,7 @@ ObjClassifier = ObjectClassifier()
 
 #### Initialize GUI ####
 main_window = tk.Tk()
-main_window.geometry('150x300')
+main_window.geometry('150x400')
 main_window.title('8 Ball')
 
 # Scale for Ball Thresholding
@@ -52,6 +52,13 @@ bkg_debug_toggle_btn.pack()
 # Button to save images of search regions from Object Classifier
 save_search_regions_btn = tk.Button(main_window, text="Save Regions", command=ObjClassifier.save_regions, width=150)
 save_search_regions_btn.pack()
+
+def save_output():
+    cv2.imwrite("Circles.png", ObjClassifier.diff_img)
+
+# Button to save final output
+fin_save_btn = tk.Button(main_window, text="Save Output", command=save_output, width=150)
+fin_save_btn.pack()
 
 # Button to abort GUI Loop and exit program
 exit_btn = tk.Button(main_window, text="Exit", command=main_window.destroy, width=150)
@@ -106,12 +113,12 @@ try:
         ObjClassifier.preprocess_for_scan(color_image[tbl_rgn[0][1]:tbl_rgn[1][1], tbl_rgn[0][0]:tbl_rgn[1][0]], difference_image[tbl_rgn[0][1]:tbl_rgn[1][1], tbl_rgn[0][0]:tbl_rgn[1][0]], ball_threshold)
         cv2.imshow("Binary Image", ObjClassifier.binary_img)
         
-        # Identify 
-        ObjClassifier.scan_for_key_regions()
-        contours = ObjClassifier.draw_search_regions()
+        ObjClassifier.scan_for_key_regions() # Identify key regions for object detection
+        ObjClassifier.identify_objects() # Classify balls and cues 
 
-        ObjClassifier.identify_balls()
-        circles = ObjClassifier.draw_circles()
+        contours = ObjClassifier.draw_search_regions()
+        #circles = ObjClassifier.draw_circles()
+
 
         cv2.imshow("Contours", contours)
         #cv2.imshow("Circles", circles)
