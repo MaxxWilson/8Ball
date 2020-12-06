@@ -1,7 +1,11 @@
+"""
+Scratch file for working on table detection.
+"""
+
+
 import numpy as np
 import cv2
 import time
-from ShorthandFunctions import *
 
 img = cv2.imread("BackgroundAvg.png")
 

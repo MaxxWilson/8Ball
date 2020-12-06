@@ -1,10 +1,11 @@
+"""
+Scratch File for working on denoising on single image as well as contour detection for initial object recognition.
+"""
+
 import numpy as np
 import time
 import matplotlib.pyplot as plt
 import cv2
-
-
-from ShorthandFunctions import *
 
 # Load two images
 img = cv2.imread("low_light2/10.png")
