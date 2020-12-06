@@ -16,17 +16,9 @@ class ObjectClassifier():
         self.frame_arr = deque([], maxlen=4)
         self.frame_avg = None
 
-    def expand_region(self, region, rad):
-        shape = np.shape(self.diff_img)
-        x1, y1 = max(region[0][0]-rad, 0), max(region[0][1]-rad, 0)
-        x2, y2 = min(region[1][0]+rad, shape[1]-1), min(region[1][1]+rad, shape[0]-1)
-        return np.array([(x1, y1), (x2, y2)])
-
     def preprocess_for_scan(self, img, diff_img, ball_threshold):
         self.img = img
         self.diff_img = diff_img
-
-        cv2.imshow("Diff Img", self.diff_img)
 
         # Convert the img to grayscale 
         self.diff_gray = cv2.cvtColor(self.diff_img, cv2.COLOR_BGR2GRAY)
@@ -34,14 +26,16 @@ class ObjectClassifier():
         # Apply a Gaussian filter to reduce image noise
         self.diff_gray = cv2.GaussianBlur(self.diff_gray,(11,11),0)
         
-        # Three cases for frame averaging
+        #### Frame Averaging for Difference Image Feed ####
         if len(self.frame_arr) == 0:
             self.frame_arr.append(self.diff_gray.astype(np.float32, copy=False))
             self.frame_avg = self.diff_gray
+
         elif(np.shape(self.frame_arr[0]) != np.shape(self.diff_gray)):
             self.frame_arr.clear()
             self.frame_arr.append(self.diff_gray.astype(np.float32, copy=False))
             self.frame_avg = self.diff_gray
+
         else:
             self.frame_arr.append(self.diff_gray.astype(np.float32, copy=False))
             self.frame_avg = (np.sum(self.frame_arr, 0)/len(self.frame_arr)).astype("uint8", copy=False)
@@ -62,46 +56,35 @@ class ObjectClassifier():
         self.search_regions = {"Ball Segment":[], "Single Ball":[], "Multi Ball":[], "Cue":[]}
 
         for c in self.contours:
+            # For each contour, calculate area and bounding box
             A = cv2.contourArea(c)
-
             x,y,w,h = cv2.boundingRect(c)
 
-            # Filter by area
+            # Filter by area and percentage of area covered
             if A < 1400:
                 radius_pad = 20
                 region_type = "Ball Segment"
-
             elif A < 2500:
                 radius_pad = 10
                 region_type = "Single Ball"
-            
             else:
                 radius_pad = 10
-
                 if A/(w*h) > 0.5:
                     region_type = "Multi Ball"
-
                 else:
                     region_type = "Cue"
             
+            # Apply region expansion with pad radius and append to search regions dictionary
             self.search_regions[region_type].append(self.expand_region([[x,y],[x+w,y+h]], radius_pad))
-            
-            #M = cv2.moments(c)
 
-            #if M["m00"] != 0:
-            #    cX = int(M["m10"] / M["m00"])
-            #    cY = int(M["m01"] / M["m00"])
-            #    cv2.putText(self.diff_img, "Area: " + str(A), (cX - 20, cY - 20),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
-
-            #rect = cv2.minAreaRect(c)
-            #box = cv2.boxPoints(rect)
-            #box = np.int0(box)
-            #cv2.drawContours(self.diff_img,[box],0,(0,0,255),2)
+    def expand_region(self, region, rad):
+        shape = np.shape(self.diff_img)
+        x1, y1 = max(region[0][0]-rad, 0), max(region[0][1]-rad, 0)
+        x2, y2 = min(region[1][0]+rad, shape[1]-1), min(region[1][1]+rad, shape[0]-1)
+        return np.array([(x1, y1), (x2, y2)])
 
     def identify_balls(self):
         self.circles = []
-
-        # No Search Region Indexing dumb bitch
 
         for rect in self.search_regions.get("Ball Segment"):
             img_rgn = self.frame_avg[rect[0, 1]:rect[1, 1], rect[0, 0]:rect[1, 0]]
@@ -120,34 +103,46 @@ class ObjectClassifier():
             self.region_detect_cue(img_rgn, rect[0])
     
     def region_detect_ball_segment(self, im_rgn, lead_point):
+        # Ball detector for regions with small contours
         _, thresh = cv2.threshold(im_rgn, 10, 255,cv2.THRESH_BINARY)
         circles = cv2.HoughCircles(thresh, cv2.HOUGH_GRADIENT, 1, 40, param1=100, param2=7, minRadius = 15, maxRadius = 25)
         self.circles.append(self.transform_circles_to_full_img(lead_point, circles))
 
     def region_detect_single_ball(self, im_rgn, lead_point):
+        # Ball detector for regions with contours the size of roughly a single ball
         _, thresh = cv2.threshold(im_rgn, 15, 255,cv2.THRESH_BINARY)
         circles = cv2.HoughCircles(thresh, cv2.HOUGH_GRADIENT, 1, 40, param1=100, param2=7, minRadius = 15, maxRadius = 25)
         self.circles.append(self.transform_circles_to_full_img(lead_point, circles))
 
     def region_detect_multi_ball(self, im_rgn, lead_point):
+        # Ball detector for regions pre-classified as containing multiple balls
         _, thresh = cv2.threshold(im_rgn, 15, 255,cv2.THRESH_BINARY)
         circles = cv2.HoughCircles(thresh, cv2.HOUGH_GRADIENT, 1, 40, param1=100, param2=7, minRadius = 15, maxRadius = 25)
         self.circles.append(self.transform_circles_to_full_img(lead_point, circles))
 
     def region_detect_cue(self, im_rgn, lead_point):
-        _, thresh = cv2.threshold(im_rgn, 81, 255,cv2.THRESH_BINARY)
+        # Cue detector for regions of pre-classified as cues
+
+        # Apply high threshold to cue region
+        _, thresh = cv2.threshold(im_rgn, 81, 255, cv2.THRESH_BINARY)
         cv2.imshow("CUE", thresh)
+
+        # Identify contours in new thresholded image
         contours, hierarchy = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
         
+        # break from function if no contours are detected
         if len(contours) == 0:
             return
 
+        # Calculate the contour areas to identify largest controur
         area = []
         for c in contours:
             area.append(cv2.contourArea(c))
 
+        # Fit line to the contour of largest area, returning vector defining angle and a point on the line
         [vx,vy,x,y] = cv2.fitLine(contours[np.where(np.array(area)==np.max(area))[0][0]], cv2.DIST_L2,0,0.01,0.01)
 
+        # Transform coordinate system back to full scale image
         x2 = x + lead_point[0]
         y2 = y + lead_point[1]
 

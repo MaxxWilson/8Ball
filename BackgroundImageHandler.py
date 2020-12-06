@@ -2,7 +2,6 @@
 background removal, averaging the video feed over a time period to reduce noise level"""
 
 import time
-
 import numpy as np
 import cv2
 
@@ -21,35 +20,43 @@ class BackgroundImageHandler():
         self.debug_toggle = False
 
     def img_accumulator(self, img):
+        # On first pass, grab the background image
         if self._avg_counter == self._img_count:
             self._bkg_img = img.astype(np.float32, copy=False)
             self._avg_counter -= 1
 
+        # After first image is captured, add new image at set interval as counter decreases
         elif self._avg_counter > 0 and (time.time() - self._last_frame_time) > self._snapshot_timer:
             self._last_frame_time = time.time()
             self._avg_counter -= 1
             self._bkg_img += img.astype(np.float32, copy=False)
             
+        # When count runs out, average all the background images, break the loop by setting bkg_state to true, and calculate table border
         elif self._avg_counter == 0:
             self._bkg_img = (self._bkg_img / self._img_count).astype("uint8", copy=False)
             self._bkg_state = True
             self.calculate_table_border(8)
 
     def calculate_table_border(self, threshold):
-        
-        self._bkg_img_gray = cv2.cvtColor(self._bkg_img, cv2.COLOR_BGR2GRAY)
-        self._bkg_img_gray = cv2.medianBlur(self._bkg_img_gray, 5)
+        # Convert to background image to grayscale and median blur with 5x5 kernel
+        self._bkg_img_gray = cv2.medianBlur(cv2.cvtColor(self._bkg_img, cv2.COLOR_BGR2GRAY), 5)
+
+        # Apply Inverse Binary threshold to isolate table from surroundings.
         _, self._bkg_img_thresh = cv2.threshold(self._bkg_img_gray, threshold, 255, cv2.THRESH_BINARY_INV)
         
+        # Run a close-open operation with two iterations to clean up noise
         kernel = np.ones((10,10),np.uint8)
-        
         self.binary_img = cv2.morphologyEx(self._bkg_img_thresh, cv2.MORPH_OPEN, kernel, iterations=2)
         self.binary_img = cv2.morphologyEx(self._bkg_img_thresh, cv2.MORPH_CLOSE, kernel, iterations=2)
         
+        # Fit a rectangle to the filtered table border
         x, y, w, h = cv2.boundingRect(self._bkg_img_thresh)
+
+        # Apply constant offset from the table border to roughly isolate the inner walls of the felt
         self.bounding_rect = [[x+self.table_thickness, y+self.table_thickness], [x+w-self.table_thickness, y+h-self.table_thickness]]
 
     def reset_bkg(self, img_count, timer):
+        # Reset class state to capture a new background image
         self._bkg_state = False
         self._bkg_img = None
 

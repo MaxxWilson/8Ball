@@ -21,12 +21,11 @@ if os.listdir(image_directory) != []:
 else:
     name_count = 1
 
-print(name_count)
 
 last_time = time.time()  # timer variable for image capturing
 time_step = 10  # How long to wait between image captures
 image_count = 5 + name_count # Number of images to save
-timer_count = 3
+timer_count = 3  # Interval between snapshots
 
 try:
     while name_count != image_count:
@@ -34,6 +33,7 @@ try:
         # Wait for color frame
         frames = pipeline.wait_for_frames()
         color_frame = frames.get_color_frame()
+
         if not color_frame:
             continue
 
@@ -46,6 +46,8 @@ try:
 
         cv2.waitKey(1)
 
+
+        # Apply three second countdown before saving snapshot
         if (time.time()-last_time) > time_step:
             print("Click!")
             cv2.imwrite(save_path + str(name_count) + ".png", color_image)
