@@ -1,4 +1,4 @@
-# EE371Q Project "8-Ball"
+# EE371Q Project "Get a Cue"
 ### Maxx Wilson, Upayan Mathkari, Christopher Zum Mallen
 
 ## Project Description
