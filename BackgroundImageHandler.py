@@ -1,5 +1,7 @@
-"""Defines a class for handling the background of the pool table. Called when we want to recapture a background image for
-background removal, averaging the video feed over a time period to reduce noise level"""
+"""
+Defines a class for handling the background of the pool table. Called when we want to recapture a background image for
+background removal, averaging the video feed over a time period to reduce noise level
+s"""
 
 import time
 import numpy as np

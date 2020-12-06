@@ -1,3 +1,8 @@
+"""
+Scratch file for testing various operations on single ball regions.
+"""
+
+
 import numpy as np
 import time
 import matplotlib.pyplot as plt

@@ -1,9 +1,13 @@
+"""
+Scratch file to test Geometry calculation for pool cue and ball trajectory.
+"""
+
 import numpy as np
 import cv2
 
 #given a cue ball point and a vector
-cue = [305,570]
-vect = [0.792626,-0.6097127]   #vect = [vx,vy,cue_x,cue_y]
+cue = [300,600]
+vect = [0.707,-0.707]   #vect = [vx,vy,cue_x,cue_y]
 slope = vect[1]/vect[0]
 r = 20 #Ball radius. Not sure what units but doesn't matter all that much
 
@@ -16,7 +20,7 @@ balls = [[600,330]]
 #Line2 = [vect[0],vect[1],cue[0]-vect[0]*2*r,cue[1]-vect[1]*2*r]
 
 #~~~~Image to draw circle and lines on
-img = cv2.imread('Fin1.png')
+img = cv2.imread('Background.png')
 cv2.circle(img,(cue[0],cue[1]),r,(0,255,255),3)
  
 
@@ -46,6 +50,6 @@ for i in range(0,len(balls)):
     #~~~~
     cv2.circle(img,(balls[i][0],balls[i][1]),r,(0,255,0),3)
 
-cv2.imwrite('FinalExample.png',img)
+cv2.imshow('FinalExample.png',img)
 cv2.waitKey(0)
 cv2.destroyAllWindows()

@@ -1,3 +1,8 @@
+"""
+A script to automatically snap pictures of the pool table at a fixed interval.
+This allows for easier data collection.
+"""
+
 import pyrealsense2 as rs
 import numpy as np
 import cv2

@@ -1,4 +1,7 @@
-"""Defines a class to search for possible balls and cues, identify their geometry in the image, and track them over time"""
+"""
+Defines a class to search for possible balls and cues, partition into search regions, detect geometry,
+calculate trajectory projections, and draw features on image.
+"""
 
 from collections import deque
 import numpy as np
@@ -11,8 +14,11 @@ class ObjectClassifier():
         self.binary_img = None
         self.contours = None
 
+        self.WHITE_THRESHOLD = 2000
+
+        self.cueball = np.array([])
         self.circles = np.array([])
-        self.cue = []
+        self.cue = np.array([])
 
         self.frame_arr = deque([], maxlen=4)
         self.frame_avg = None
@@ -93,8 +99,13 @@ class ObjectClassifier():
             self.region_detect_ball_segment(img_rgn, rect[0])
 
         for rect in self.search_regions.get("Single Ball"):
-            img_rgn = self.frame_avg[rect[0, 1]:rect[1, 1], rect[0, 0]:rect[1, 0]]
-            self.region_detect_single_ball(img_rgn, rect[0])
+            white_rgn = self.cue_ball_detect(self.img[rect[0, 1]:rect[1, 1], rect[0, 0]:rect[1, 0]])
+
+            if white_rgn > self.WHITE_THRESH:
+                self.region_detect_single_ball(white_rgn, rect[0], cb_detect=True)
+            else:
+                img_rgn = self.frame_avg[rect[0, 1]:rect[1, 1], rect[0, 0]:rect[1, 0]]
+                self.region_detect_single_ball(img_rgn, rect[0])
 
         for rect in self.search_regions.get("Multi Ball"):
             img_rgn = self.frame_avg[rect[0, 1]:rect[1, 1], rect[0, 0]:rect[1, 0]]
@@ -114,15 +125,21 @@ class ObjectClassifier():
             else:
                  np.append(self.circles, self.transform_circles_to_full_img(lead_point, circles))
 
-    def region_detect_single_ball(self, im_rgn, lead_point):
-        # Ball detector for regions with contours the size of roughly a single ball
-        _, thresh = cv2.threshold(im_rgn, 15, 255,cv2.THRESH_BINARY)
-        circles = cv2.HoughCircles(thresh, cv2.HOUGH_GRADIENT, 1, 40, param1=100, param2=7, minRadius = 15, maxRadius = 25)
-        if circles is not None:
-            if len(self.circles) == 0:
-                self.circles = self.transform_circles_to_full_img(lead_point, circles)
-            else:
-                np.append(self.circles, self.transform_circles_to_full_img(lead_point, circles))
+    def region_detect_single_ball(self, im_rgn, lead_point, cb_detect=False):
+        if cb_detect:
+            _, thresh = cv2.threshold(im_rgn, 100, 255,cv2.THRESH_BINARY)
+            self.cueball = cv2.HoughCircles(thresh, cv2.HOUGH_GRADIENT, 1, 40, param1=100, param2=7, minRadius = 15, maxRadius = 25)
+            if self.cueball is not None:
+                self.cueball = self.cueball[0]
+        else:
+            # Ball detector for regions with contours the size of roughly a single ball
+            _, thresh = cv2.threshold(im_rgn, 15, 255,cv2.THRESH_BINARY)
+            circles = cv2.HoughCircles(thresh, cv2.HOUGH_GRADIENT, 1, 40, param1=100, param2=7, minRadius = 15, maxRadius = 25)
+            if circles is not None:
+                if len(self.circles) == 0:
+                    self.circles = self.transform_circles_to_full_img(lead_point, circles)
+                else:
+                    np.append(self.circles, self.transform_circles_to_full_img(lead_point, circles))
 
     def region_detect_multi_ball(self, im_rgn, lead_point):
         # Ball detector for regions pre-classified as containing multiple balls
@@ -139,7 +156,6 @@ class ObjectClassifier():
 
         # Apply high threshold to cue region
         _, thresh = cv2.threshold(im_rgn, 81, 255, cv2.THRESH_BINARY)
-        cv2.imshow("CUE", thresh)
 
         # Identify contours in new thresholded image
         contours, hierarchy = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
@@ -156,53 +172,47 @@ class ObjectClassifier():
         # Find contour of largest area
         main_contour = contours[np.where(np.array(area)==np.max(area))[0][0]]
 
-        # Calculate Centroid
-        M = cv2.moments(main_contour)
-        if M["m00"] != 0:
-            cX = int(M["m10"] / M["m00"])
-            cY = int(M["m01"] / M["m00"])
-        else:
-            cX, cY = None, None
-
         [vx,vy,x,y] = cv2.fitLine(main_contour, cv2.DIST_L2,0,0.01,0.01)
 
         # Transform coordinate system back to full scale image
         x2 = x + lead_point[0]
         y2 = y + lead_point[1]
 
-        cv2.circle(self.img,(1450, 300), 30, (0,255,0), 3)
-
-        print(cX + lead_point[0], cY + lead_point[1])
-        self.calculate_geometry([1450, 300], [vx,vy,x2,y2])
-
-        #self.calculate_geometry([cX + lead_point[0], cY + lead_point[1]], [vx,vy,x2,y2])
+        try:
+            self.calculate_geometry(self.cueball, [vx,vy,x2,y2])
+        except:
+            pass
 
     def calculate_geometry(self, cue_ball, cue_line):
         vx, vy, x, y = cue_line
         slope = vy/vx
-        r = 30
+        r = 20
         for i in range(len(self.circles)):
+            
             #find the vector from the cue ball to the other ball
-            x_diff = self.circles[i][0]-cue_ball[0] #find the difference between the ball and cue
-            y_diff = self.circles[i][1]-cue_ball[1]
+            x_diff = self.circles[i][0]-self.cueball[0] #find the difference between the ball and cue
+            y_diff = self.circles[i][1]-self.cueball[1]
+            
             ball_dist = np.sqrt(x_diff**2+y_diff**2)  #find the vector magnitude to the ball
             vect_temp = [x_diff/ball_dist, y_diff/ball_dist] #normalized vector to ball
             slope_temp = vect_temp[1]/vect_temp[0] #slope of normalized vector
             theta = np.arctan((np.abs(slope-slope_temp))/(1+slope*slope_temp)) #angle between two vectors
             norm_dist = np.sin(theta)*ball_dist #distance between the ball and the original vector
+            
             if abs(norm_dist) < (2*r):
                 print(norm_dist/(2*r))
                 phi = np.arcsin(norm_dist/(2*r)) #angle of impact (from original line)
                 length = np.cos(theta)*ball_dist - np.cos(phi)*2*r #distance along original line to impact point
+                
                 #find a normalized vector of the line of impact
-                impact = [cue_ball[0]+vx*length,cue_ball[1]+vy*length]     
+                impact = [self.cueball[0]+vx*length,self.cueball[1]+vy*length]     
                 impvect = [(self.circles[i][0]-impact[0])/(2*r),(self.circles[i][1]-impact[1])/(2*r)] #Line of impact normalized vector
                 line = [impvect[0],impvect[1],self.circles[i][0],self.circles[i][1]] #vect = [vx,vy,cue_x,cue_y]
                 
                 #~~~~
                 cv2.line(self.img,(line[2],line[3]),(int(line[2]+line[0]*1000),int(line[3]+line[1]*1000)),(255,0,255),2)
                 cv2.circle(self.img,(int(impact[0]),int(impact[1])),r,(0,255,255),3)
-                cv2.line(self.img,(cue_ball[0], cue_ball[1]), (int(impact[0]),int(impact[1])),(0,255,255),2)
+                cv2.line(self.img,(self.cueball[0], self.cueball[1]), (int(impact[0]),int(impact[1])),(0,255,255),2)
                 
             #~~~~
             cv2.circle(self.img,(self.circles[i][0], self.circles[i][1]), r, (0,255,0), 3)
@@ -215,6 +225,20 @@ class ObjectClassifier():
                 circles[i][1] += rectangle[1]
         return circles
 
+    @staticmethod
+    def cue_ball_detect(img):
+        white = [255, 255, 255]
+        diff = 60
+        boundaries = [([white[2]-diff, white[1]-diff, white[0]-diff], [white[2], white[1], white[0]])]
+
+        for (lower, upper) in boundaries:
+            lower = np.array(lower, dtype=np.uint8)
+            upper = np.array(upper, dtype=np.uint8)
+            mask = cv2.inRange(img, lower, upper)
+            output = cv2.bitwise_and(img, img, mask=mask)
+            
+            return(cv2.countNonZero(mask))
+
     def draw_search_regions(self):
         for region in self.search_regions.keys():
             for rect in self.search_regions.get(region):
@@ -222,7 +246,6 @@ class ObjectClassifier():
         return self.diff_img
     
     def draw_circles(self):
-        print(self.circles)
         if self.circles is not None:
             for (x, y, r) in self.circles:
                 cv2.circle(self.diff_img, (x, y), r, (0, 0, 255), 4)

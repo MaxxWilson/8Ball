@@ -1,3 +1,8 @@
+"""
+Main file, pulls in Live Feed from Intel RealSense d435 camera above pool table. Instantiates Background Handler and Object Classifier classes,
+TKinter GUI, and runs Get A Cue on camera feed. This script displays the final output to a user to improve their pool game.
+"""
+
 import pyrealsense2 as rs
 import numpy as np
 import cv2
@@ -53,13 +58,6 @@ bkg_debug_toggle_btn.pack()
 save_search_regions_btn = tk.Button(main_window, text="Save Regions", command=ObjClassifier.save_regions, width=150)
 save_search_regions_btn.pack()
 
-def save_output():
-    cv2.imwrite("Circles.png", ObjClassifier.diff_img)
-
-# Button to save final output
-fin_save_btn = tk.Button(main_window, text="Save Output", command=save_output, width=150)
-fin_save_btn.pack()
-
 # Button to abort GUI Loop and exit program
 exit_btn = tk.Button(main_window, text="Exit", command=main_window.destroy, width=150)
 exit_btn.pack()
@@ -109,19 +107,24 @@ try:
         # Calculate Difference Image
         difference_image = cv2.absdiff(color_image, BkgHandler.get_bkg_img())
         
-        # Pass restriced table region into Object Classifier for smoothing and binarization
-        ObjClassifier.preprocess_for_scan(color_image[tbl_rgn[0][1]:tbl_rgn[1][1], tbl_rgn[0][0]:tbl_rgn[1][0]], difference_image[tbl_rgn[0][1]:tbl_rgn[1][1], tbl_rgn[0][0]:tbl_rgn[1][0]], ball_threshold)
-        cv2.imshow("Binary Image", ObjClassifier.binary_img)
+        # Pass restricted table region into Object Classifier for smoothing and binarization
+        ObjClassifier.preprocess_for_scan(color_image[tbl_rgn[0][1]:tbl_rgn[1][1], tbl_rgn[0][0]:tbl_rgn[1][0]],
+        difference_image[tbl_rgn[0][1]:tbl_rgn[1][1], tbl_rgn[0][0]:tbl_rgn[1][0]], ball_threshold)
+
+        # Identify key regions for object detection
+        ObjClassifier.scan_for_key_regions()
         
-        ObjClassifier.scan_for_key_regions() # Identify key regions for object detection
-        ObjClassifier.identify_objects() # Classify balls and cues 
-
+        # Classify balls and cue geometry
+        ObjClassifier.identify_objects() 
+        
+        # Draw Search Regions on Difference Image
         contours = ObjClassifier.draw_search_regions()
-        #circles = ObjClassifier.draw_circles()
+        circles = ObjClassifier.draw_circles()
 
-
-        cv2.imshow("Contours", contours)
-        #cv2.imshow("Circles", circles)
+        # Show Final Output
+        cv2.imshow("Search Regions", contours)
+        cv2.imshow("Circles", circles)
+        cv2.imshow("Output", ObjClassifier.img)
 
         cv2.waitKey(1)
 
